@@ -158,7 +158,7 @@ export default class MovieService {
    */
   // tag::getForActor[]
   async getForActor(id, sort = 'title', order = 'ASC', limit = 6, skip = 0, userId = undefined) {
-    // TODO: Get Movies acted in by a Person
+    // Get Movies acted in by a Person
     // MATCH (:Person {tmdbId: $id})-[:ACTED_IN]->(m:Movie)
 
     // Open a new session
@@ -217,7 +217,7 @@ export default class MovieService {
    */
   // tag::getForDirector[]
   async getForDirector(id, sort = 'title', order = 'ASC', limit = 6, skip = 0, userId = undefined) {
-    // TODO: Get Movies directed by a Person
+    // Get Movies directed by a Person
     // MATCH (:Person {tmdbId: $id})-[:DIRECTED]->(m:Movie)
 
     // Open a new session
@@ -268,10 +268,45 @@ export default class MovieService {
    */
   // tag::findById[]
   async findById(id, userId = undefined) {
-    // TODO: Find a movie by its ID
+    // Find a movie by its ID
     // MATCH (m:Movie {tmdbId: $id})
 
-    return goodfellas
+    // Open a new database session
+    const session = this.driver.session()
+
+    // Find a movie by its ID
+    const res = await session.readTransaction(async tx => {
+      const favorites = []
+      if (userId !== undefined) {
+        const favoriteResult = await tx.run(`MATCH (u:User {userId: $userId})-[:HAS_FAVORITE]->(m) RETURN m.tmdbId AS id`)
+        favorites = favoriteResult.map(row => row.get('id'))
+      }
+
+      return tx.run(`
+        MATCH (m:Movie {tmdbId: $id})
+        RETURN m {
+          .*,
+          actors: [ (a)-[r:ACTED_IN]->(m) | a { .*, role: r.role } ],
+          directors: [ (d)-[:DIRECTED]->(m) | d { .* } ],
+          genres: [ (m)-[:IN_GENRE]->(g) | g { .name }],
+          ratingCount: size((m)<-[:RATED]-()),
+          favorite: m.tmdbId IN $favorites
+        } AS movie
+        LIMIT 1
+      `, { id, favorites })
+    })
+
+    // Close the session
+    await session.close()
+
+    // Throw a 404 if the Movie cannot be found
+    if (res.records.length === 0) {
+      throw new NotFoundError(`Could not find a Movie with tmdbId ${id}`)
+    }
+
+    const [first] = res.records
+
+    return toNativeTypes(first.get('movie'))
   }
   // end::findById[]
 
@@ -297,13 +332,46 @@ export default class MovieService {
    */
   // tag::getSimilarMovies[]
   async getSimilarMovies(id, limit = 6, skip = 0, userId = undefined) {
-    // TODO: Get similar movies based on genres or ratings
+    // Get similar movies based on genres or ratings
+    // MATCH (:Movie {tmdbId: $id})-[:IN_GENRE|ACTED_IN|DIRECTED]->()<-[:IN_GENRE|ACTED_IN|DIRECTED]-(m)
 
-    return popular.slice(skip, skip + limit)
-      .map(item => ({
-        ...item,
-        score: (Math.random() * 100).toFixed(2)
-      }))
+    // Open an Session
+    const session = this.driver.session()
+
+    // Get similar movies based on genres or ratings
+    const res = await session.readTransaction(async tx => {
+      const favorites = []
+      if ( userId !== undefined ) {
+          const favoriteResult = await tx.run(`MATCH (u:User {userId: $userId})-[:HAS_FAVORITE]->(m) RETURN m.tmdbId AS id`)
+          favorites = favoriteResult.map(row => row.get('id'))
+      }
+
+      return tx.run(`
+        MATCH (:Movie {tmdbId: $id})-[:IN_GENRE|ACTED_IN|DIRECTED]->()<-[:IN_GENRE|ACTED_IN|DIRECTED]-(m)
+        WHERE exists(m.imdbRating)
+
+        WITH m, count(*) AS inCommon
+        WITH m, inCommon, m.imdbRating * inCommon AS score
+        ORDER BY score
+
+        SKIP $skip
+        LIMIT $limit
+
+        RETURN m {
+          .*,
+          score: score,
+          favorite: m.tmdbId IN $favorites
+        } AS movie
+      `, { id, skip: int(skip), limit: int(limit), favorites })
+    })
+
+    // Get a list of Movies from the Result
+    const movies = res.records.map(row => toNativeTypes(row.get('movie')))
+
+    // Close the session
+    await session.close()
+
+    return movies
   }
   // end::getSimilarMovies[]
 
@@ -318,7 +386,7 @@ export default class MovieService {
    */
   // tag::getUserFavorites[]
   async getUserFavorites(tx, userId) {
-    if ( userId !== undefined ) {
+    if (userId !== undefined) {
       const favoriteResult = await tx.run(`
         MATCH (u:User {userId: $userId})-[:HAS_FAVORITE]->(m)
         RETURN m.tmdbId AS id
