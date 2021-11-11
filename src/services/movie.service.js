@@ -352,7 +352,7 @@ export default class MovieService {
 
         WITH m, count(*) AS inCommon
         WITH m, inCommon, m.imdbRating * inCommon AS score
-        ORDER BY score
+        ORDER BY score DESC
 
         SKIP $skip
         LIMIT $limit
