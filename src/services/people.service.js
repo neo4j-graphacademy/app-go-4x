@@ -69,9 +69,24 @@ export default class PeopleService {
    */
   // tag::findById[]
   async findById(id) {
-    // TODO: Find a user by their ID
+    // Open a new database session
+    const session = this.driver.session()
 
-    return pacino
+    // Get a list of people from the database
+    const res = await session.readTransaction(tx => tx.run(`
+      MATCH (p:Person {tmdbId: $id})
+      RETURN p {
+        .*,
+        actedCount: size((p)-[:ACTED_IN]->()),
+        directedCount: size((p)-[:DIRECTED]->())
+      } AS person
+    `, { id }))
+
+    // Close the session
+    await session.close()
+
+    const [row] = res.records
+    return toNativeTypes(row.get('person'))
   }
   // end::findById[]
 
@@ -87,9 +102,27 @@ export default class PeopleService {
    */
   // tag::getSimilarPeople[]
   async getSimilarPeople(id, limit = 6, skip = 0) {
-    // TODO: Get a list of similar people to the person by their id
+    // Open a new database session
+    const session = this.driver.session()
 
-    return people.slice(skip, skip + limit)
+    // Get a list of similar people to the person by their id
+    const res = await session.readTransaction(tx => tx.run(`
+      MATCH (:Person {tmdbId: $id})-[:ACTED_IN|DIRECTED]->(m)<-[r:ACTED_IN|DIRECTED]-(p)
+      RETURN p {
+        .*,
+        actedCount: size((p)-[:ACTED_IN]->()),
+        directedCount: size((p)-[:DIRECTED]->()),
+        inCommon: collect(m {.tmdbId, .title, type: type(r)})
+      } AS person
+      ORDER BY size(person.inCommon) DESC
+      SKIP $skip
+      LIMIT $limit
+    `, { id, skip: int(skip), limit: int(limit) }))
+
+    // Close the session
+    await session.close()
+
+    return res.records.map(row => toNativeTypes(row.get('person')))
   }
   // end::getSimilarPeople[]
 
