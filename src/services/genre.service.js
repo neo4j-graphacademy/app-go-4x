@@ -46,7 +46,9 @@ export default class GenreService {
       CALL {
         WITH g
         MATCH (g)<-[:IN_GENRE]-(m:Movie)
-        WHERE exists(m.imdbRating) AND exists(m.poster) AND g.name <> '(no genres listed)'
+        WHERE m.imdbRating IS NOT NULL
+        AND m.poster IS NOT NULL
+        AND g.name <> '(no genres listed)'
         RETURN m.poster AS poster
         ORDER BY m.imdbRating DESC LIMIT 1
       }
@@ -83,7 +85,9 @@ export default class GenreService {
     // Get Genre information from the database
     const res = await session.readTransaction(tx => tx.run(`
       MATCH (g:Genre {name: $name})<-[:IN_GENRE]-(m:Movie)
-      WHERE exists(m.imdbRating) AND exists(m.poster) AND g.name <> '(no genres listed)'
+      WHERE m.imdbRating IS NOT NULL
+      AND m.poster IS NOT NULL
+      AND g.name <> '(no genres listed)'
       WITH g, m
       ORDER BY m.imdbRating DESC
 
@@ -99,7 +103,7 @@ export default class GenreService {
 
     // Throw a 404 Error if the genre is not found
     if ( res.records.length === 0 ) {
-        throw new NotFoundError(`Could not find a genre with the name '${name}'`)
+      throw new NotFoundError(`Could not find a genre with the name '${name}'`)
     }
 
     // Close the session
