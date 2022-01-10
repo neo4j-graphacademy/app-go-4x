@@ -350,7 +350,7 @@ export default class MovieService {
 
       return tx.run(`
         MATCH (:Movie {tmdbId: $id})-[:IN_GENRE|ACTED_IN|DIRECTED]->()<-[:IN_GENRE|ACTED_IN|DIRECTED]-(m)
-        WHERE exists(m.imdbRating)
+        WHERE m.imdbRating IS NOT NULL
 
         WITH m, count(*) AS inCommon
         WITH m, inCommon, m.imdbRating * inCommon AS score
