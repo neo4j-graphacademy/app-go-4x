@@ -52,7 +52,7 @@ export default class MovieService {
       // favorite flag appened to the movie's properties
       return tx.run(`
         MATCH (m:Movie)
-        WHERE exists(m.\`${sort}\`)
+        WHERE m.\`${sort}\` IS NOT NULL
         RETURN m {
           .*,
           favorite: m.tmdbId IN $favorites
@@ -116,7 +116,7 @@ export default class MovieService {
       // favorite flag appened to the movie's properties
       return tx.run(`
         MATCH (m:Movie)-[:IN_GENRE]->(:Genre {name: $name})
-        WHERE exists(m.\`${sort}\`)
+        WHERE m.\`${sort}\` IS NOT NULL
         RETURN m {
           .*,
           favorite: m.tmdbId IN $favorites
@@ -175,7 +175,7 @@ export default class MovieService {
       // favorite flag appened to the movie's properties
       return tx.run(`
         MATCH (:Person {tmdbId: $id})-[:ACTED_IN]->(m:Movie)
-        WHERE exists(m.\`${sort}\`)
+        WHERE m.\`${sort}\` IS NOT NULL
         RETURN m {
           .*,
           favorite: m.tmdbId IN $favorites
@@ -234,7 +234,7 @@ export default class MovieService {
       // favorite flag appened to the movie's properties
       return tx.run(`
         MATCH (:Person {tmdbId: $id})-[:DIRECTED]->(m:Movie)
-        WHERE exists(m.\`${sort}\`)
+        WHERE m.\`${sort}\` IS NOT NULL
         RETURN m {
           .*,
           favorite: m.tmdbId IN $favorites
