@@ -50,7 +50,7 @@ public class NeoflixApp {
              * This route should retrieve a full list of Genres from the
              * database along with a poster and movie count.
              */
-            get("/", (req, res) -> genreService.all(), gson::toJson);
+            get("", (req, res) -> genreService.all(), gson::toJson);
 
             /*
              * @GET /genres/:name
@@ -59,7 +59,7 @@ public class NeoflixApp {
              * that matches the :name URL parameter.  If the genre is not found,
              * a 404 should be thrown.
              */
-            get("/:name", (req, res) -> genreService.find(req.params("name")), gson::toJson);
+            get("/:name", (req, res) -> genreService.find(req.params(":name")), gson::toJson);
 
             /**
              * @GET /genres/:name/movies
@@ -69,7 +69,7 @@ public class NeoflixApp {
              */
             get("/:name/movies", (req, res) -> {
                 var userId = req.headers("user"); // TODO
-                return movieService.byGenre(req.params("name"), Query.parse(req, Query.MOVIE_SORT), userId);
+                return movieService.byGenre(req.params(":name"), Query.parse(req, Query.MOVIE_SORT), userId);
             }, gson::toJson);
         }
 

@@ -47,7 +47,7 @@ class GenreService {
                     RETURN g {
                       .name,
                       link: '/genres/'+ g.name,
-                      poster: poster
+                      poster: poster,
                       movies: size( (g)<-[:IN_GENRE]-() )
                     } as genre
                     ORDER BY g.name ASC
