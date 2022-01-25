@@ -230,6 +230,113 @@ public class MovieService {
     // end::getByGenre[]
 
     /**
+     * This method should return a paginated list of movies that have an ACTED_IN relationship
+     * to a Person with the id supplied
+     *
+     * Results should be ordered by the `sort` parameter, and in the direction specified
+     * in the `order` parameter.
+     * Results should be limited to the number passed as `limit`.
+     * The `skip` variable should be used to skip a certain number of rows.
+     *
+     * If a userId value is suppled, a `favorite` boolean property should be returned to
+     * signify whether the user has aded the movie to their "My Favorites" list.
+     *
+     * @param actorId actor id
+     * @param params query params with sorting and pagination
+     * @param userId
+     * @return List<Movie>
+     */
+    // tag::getForActor[]
+    public List<Map<String,Object>> getForActor(String actorId, NeoflixApp.Params params,String userId) {
+        // Get Movies acted in by a Person
+        // MATCH (:Person {tmdbId: $id})-[:ACTED_IN]->(m:Movie)
+
+        // Open a new session
+        try (var session = this.driver.session()) {
+
+            // Execute a query in a new Read Transaction
+            var movies = session.readTransaction(tx -> {
+                // Get an array of IDs for the User's favorite movies
+                var favorites = getUserFavorites(tx, userId);
+                var sort = params.sort(NeoflixApp.Params.Sort.title);
+
+                // Retrieve a list of movies with the
+                // favorite flag appended to the movie's properties
+                String query = String.format("""
+                          MATCH (:Person {tmdbId: $id})-[:ACTED_IN]->(m:Movie)
+                          WHERE m.`%s` IS NOT NULL
+                          RETURN m {
+                            .*,
+                              favorite: m.tmdbId IN $favorites
+                          } AS movie
+                          ORDER BY m.`%s` %s
+                          SKIP $skip
+                          LIMIT $limit
+                        """, sort, sort, params.order());
+                var res = tx.run(query, Values.parameters("skip", params.skip(), "limit", params.limit(), "favorites", favorites, "id", actorId));
+                // Get a list of Movies from the Result
+                return res.list(row -> row.get("movie").asMap());
+            });
+            return movies;
+        }
+    }
+    // end::getForActor[]
+
+    /**
+     * This method should return a paginated list of movies that have an DIRECTED relationship
+     * to a Person with the id supplied
+     *
+     * Results should be ordered by the `sort` parameter, and in the direction specified
+     * in the `order` parameter.
+     * Results should be limited to the number passed as `limit`.
+     * The `skip` variable should be used to skip a certain number of rows.
+     *
+     * If a userId value is suppled, a `favorite` boolean property should be returned to
+     * signify whether the user has aded the movie to their "My Favorites" list.
+     *
+     * @param directorId director id
+     * @param params query params with sorting and pagination
+     * @param userId
+     * @return List<Movie>
+     */
+    // tag::getForActor[]
+    public List<Map<String,Object>> getForDirector(String directorId, NeoflixApp.Params params,String userId) {
+        // Get Movies acted in by a Person
+        // MATCH (:Person {tmdbId: $id})-[:DIRECTED]->(m:Movie)
+
+        // Open a new session
+        try (var session = this.driver.session()) {
+
+            // Execute a query in a new Read Transaction
+            var movies = session.readTransaction(tx -> {
+                // Get an array of IDs for the User's favorite movies
+                var favorites = getUserFavorites(tx, userId);
+                var sort = params.sort(NeoflixApp.Params.Sort.title);
+
+                // Retrieve a list of movies with the
+                // favorite flag appended to the movie's properties
+                String query = String.format("""
+                          MATCH (:Person {tmdbId: $id})-[:DIRECTED]->(m:Movie)
+                          WHERE m.`%s` IS NOT NULL
+                          RETURN m {
+                            .*,
+                              favorite: m.tmdbId IN $favorites
+                          } AS movie
+                          ORDER BY m.`%s` %s
+                          SKIP $skip
+                          LIMIT $limit
+                        """, sort, sort, params.order());
+                var res = tx.run(query, Values.parameters("skip", params.skip(), "limit", params.limit(), "favorites", favorites, "id", directorId));
+                // Get a list of Movies from the Result
+                return res.list(row -> row.get("movie").asMap());
+            });
+            return movies;
+        }
+    }
+    // end::getForActor[]
+
+
+    /**
      * This function should return a list of tmdbId properties for the movies that
      * the user has added to their 'My Favorites' list.
      *

@@ -80,10 +80,12 @@ public class NeoflixApp {
     private static class PeopleRoutes implements RouteGroup {
         private final Gson gson;
         private final PeopleService peopleService;
+        private final MovieService movieService;
 
         public PeopleRoutes(Driver driver, Gson gson) {
             this.gson = gson;
             peopleService = new PeopleService(driver);
+            movieService = new MovieService(driver);
         }
 
         @Override
@@ -109,6 +111,28 @@ public class NeoflixApp {
              * with the :id supplied in the route params.
              */
             get("/:id/similar", (req, res) -> peopleService.getSimilarPeople(req.params(":id"), Params.parse(req, Params.PEOPLE_SORT)), gson::toJson);
+
+            /*
+             * @GET /people/:id/acted
+             *
+             * This route should return a paginated list of movies that the person
+             * with the :id has acted in.
+             */
+            get("/:id/acted", (req, res) -> {
+                var userId = req.headers("user"); // TODO
+                return movieService.getForActor(req.params(":id"), Params.parse(req, Params.MOVIE_SORT), userId);
+            }, gson::toJson);
+
+            /*
+             * @GET /people/:id/directed
+             *
+             * This route should return a paginated list of movies that the person
+             * with the :id has acted in.
+             */
+            get("/:id/directed", (req, res) -> {
+                var userId = req.headers("user"); // TODO
+                return movieService.getForDirector(req.params(":id"), Params.parse(req, Params.MOVIE_SORT), userId);
+            }, gson::toJson);
         }
 
     }
