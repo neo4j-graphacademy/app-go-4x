@@ -57,4 +57,51 @@ public class RatingService {
     }
     // end::forMovie[]
 
+
+    /**
+     * Add a relationship between a User and Movie with a `rating` property.
+     * The `rating` parameter should be converted to a Neo4j Integer.
+     *
+     * If the User or Movie cannot be found, a NotFoundError should be thrown
+     *
+     * @param {string} userId   the userId for the user
+     * @param {string} movieId  The tmdbId for the Movie
+     * @param {number} rating   An integer representing the rating from 1-5
+     * @returns {Promise<Record<string, any>>}  A movie object with a rating property appended
+     */
+    // tag::add[]
+    public Map<String,Object> add(String userId, String movieId, int rating) {
+        // tag::write[]
+        // Save the rating in the database
+
+        // Open a new session
+        try (var session = this.driver.session()) {
+
+            // Run the cypher query
+            var movies = session.writeTransaction(tx -> {
+                String query = """
+                        MATCH (u:User {userId: $userId})
+                        MATCH (m:Movie {tmdbId: $movieId})
+
+                        MERGE (u)-[r:RATED]->(m)
+                        SET r.rating = $rating, r.timestamp = timestamp()
+                                
+                        RETURN m { .*, rating: r.rating } AS movie
+                        """;
+                var res = tx.run(query, Values.parameters("userId", userId, "movieId", movieId, "rating", rating));
+                return res.list(row -> row.get("movie").asMap()).stream();
+            });
+            // end::write[]
+
+            // tag::throw[]
+            var movie = movies.findFirst().orElseThrow(() -> new RuntimeException(String.format("Could not create rating for Movie %s by User %s", movieId, userId)));
+            // end::throw[]
+
+            // tag::addreturn[]
+            // Return movie details and a rating
+            return movie;
+            // end::addreturn[]
+        }
+    }
+    // end::add[]
 }
