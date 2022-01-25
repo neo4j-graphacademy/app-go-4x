@@ -121,6 +121,6 @@ router.post('/ratings/:id', async (req, res, next) => {
     next(e)
   }
 })
-// tag::rating[]
+// end::rating[]
 
 export default router

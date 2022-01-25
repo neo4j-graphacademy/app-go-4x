@@ -27,9 +27,11 @@ public class NeoflixApp {
         Gson gson = GsonUtils.gson();
 
         path("/api", () -> {
-            path("/genres", new GenreRoutes(driver,gson));
-            path("/people", new PeopleRoutes(driver,gson));
             path("/movies", new MovieRoutes(driver,gson));
+            path("/genres", new GenreRoutes(driver,gson));
+            // path("/auth", new AuthRoutes(driver,gson));
+            path("/account", new AccountRoutes(driver,gson));
+            path("/people", new PeopleRoutes(driver,gson));
         });
         System.out.printf("Started server at port %d%n",port);
     }
@@ -71,7 +73,7 @@ public class NeoflixApp {
              * the genre whose name matches the :name URL parameter.
              */
             get("/:name/movies", (req, res) -> {
-                var userId = req.headers("user"); // TODO
+                String userId = getUserId(req); // TODO
                 return movieService.byGenre(req.params(":name"), Params.parse(req, Params.MOVIE_SORT), userId);
             }, gson::toJson);
         }
@@ -119,7 +121,7 @@ public class NeoflixApp {
              * with the :id has acted in.
              */
             get("/:id/acted", (req, res) -> {
-                var userId = req.headers("user"); // TODO
+                String userId = getUserId(req); // TODO
                 return movieService.getForActor(req.params(":id"), Params.parse(req, Params.MOVIE_SORT), userId);
             }, gson::toJson);
 
@@ -130,12 +132,89 @@ public class NeoflixApp {
              * with the :id has acted in.
              */
             get("/:id/directed", (req, res) -> {
-                var userId = req.headers("user"); // TODO
+                String userId = getUserId(req); // TODO
                 return movieService.getForDirector(req.params(":id"), Params.parse(req, Params.MOVIE_SORT), userId);
             }, gson::toJson);
         }
 
     }
+    private static class AccountRoutes implements RouteGroup {
+        private final Gson gson;
+        private final FavoriteService favoriteService;
+        private final RatingService ratingService;
+
+        public AccountRoutes(Driver driver, Gson gson) {
+            this.gson = gson;
+            favoriteService = new FavoriteService(driver);
+            ratingService = new RatingService(driver);
+        }
+
+        @Override
+        public void addRoutes() {
+            /*
+             * @GET /account/
+             *
+             * This route simply returns the claims made in the JWT token
+             */
+            get("", (req, res) -> req.attribute("user"), gson::toJson);
+
+            /*
+             * @GET /account/favorites/
+             *
+             * This route should return a list of movies that a user has added to their
+             * Favorites link by clicking the Bookmark icon on a Movie card.
+             */
+            // tag::list[]
+            get("/favorites", (req, res) -> {
+                String userId = getUserId(req);
+                return favoriteService.all(userId, Params.parse(req, Params.MOVIE_SORT));
+            }, gson::toJson);
+            // end::list[]
+
+            /*
+             * @POST /account/favorites/:id
+             *
+             * This route should create a `:HAS_FAVORITE` relationship between the current user
+             * and the movie with the :id parameter.
+             */
+            // tag::add[]
+            post("/favorites/:id", (req, res) -> {
+                String userId = getUserId(req);
+                return favoriteService.add(req.params(":id"), userId);
+            }, gson::toJson);
+            // end::add[]
+
+            /*
+             * @DELETE /account/favorites/:id
+             *
+             * This route should remove the `:HAS_FAVORITE` relationship between the current user
+             * and the movie with the :id parameter.
+             */
+            // tag::delete[]
+            delete("/favorites/:id", (req, res) -> {
+                String userId = getUserId(req); // TODO
+                return favoriteService.remove(req.params(":id"), userId);
+            }, gson::toJson);
+            // end::delete[]
+
+            /*
+             * @POST /account/ratings/:id
+             *
+             * This route should create a `:RATING` relationship between the current user
+             * and the movie with the :id parameter.  The rating value will be posted as part
+             * of the post body.
+             */
+            // tag::rating[]
+            get("/ratings/:id", (req, res) -> {
+                String userId = getUserId(req); // TODO
+                int rating = Integer.parseInt(req.body());
+                return ratingService.add(userId, req.params(":id"), rating);
+            }, gson::toJson);
+            // end::rating[]
+        }
+
+    }
+
     private static class MovieRoutes implements RouteGroup {
         private final Gson gson;
         private final MovieService movieService;
@@ -157,7 +236,7 @@ public class NeoflixApp {
              */
             // tag::list[]
             get("", (req, res) -> {
-                var userId = req.headers("user"); // TODO
+                String userId = getUserId(req); // TODO
                 return movieService.all(Params.parse(req, Params.MOVIE_SORT), userId);
             }, gson::toJson);
             // end::list[]
@@ -169,7 +248,7 @@ public class NeoflixApp {
              */
             // tag::get[]
             get("/:id", (req, res) -> {
-                var userId = req.headers("user"); // TODO
+                String userId = getUserId(req); // TODO
                 Map<String, Object> movie = movieService.findById(req.params(":id"), userId);
                 return movie;
             }, gson::toJson);
@@ -193,12 +272,18 @@ public class NeoflixApp {
              */
             // tag::similar[]
             get("/:id/similar", (req, res) -> {
-                var userId = req.headers("user"); // TODO
+                String userId = getUserId(req); // TODO
                 return movieService.getSimilarMovies(req.params(":id"), Params.parse(req, Params.MOVIE_SORT), userId);
             }, gson::toJson);
             // end::similar[]
         }
 
+    }
+
+    private static String getUserId(Request req) {
+        Object user = req.attribute("user");
+        if (user instanceof Map) return null;
+        return (String) ((Map<String, Object>) user).get("userId"); // todo
     }
 
     record Params(String query, Sort sort, Order order, int limit, int skip) {
