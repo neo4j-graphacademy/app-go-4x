@@ -10,9 +10,170 @@ import java.util.Map;
 public class MovieService {
     private final Driver driver;
 
+    /**
+     * The constructor expects an instance of the Neo4j Driver, which will be
+     * used to interact with Neo4j.
+     */
     public MovieService(Driver driver) {
         this.driver = driver;
     }
+
+    /**
+     * This method should return a paginated list of movies ordered by the `sort`
+     * parameter and limited to the number passed as `limit`.  The `skip` variable should be
+     * used to skip a certain number of rows.
+     *
+     * If a userId value is suppled, a `favorite` boolean property should be returned to
+     * signify whether the user has aded the movie to their "My Favorites" list.
+     *
+     * @param params query params
+     * @param userId
+     * @returns {Promise<Record<string, any>[]>}
+     */
+    // tag::all[]
+    public List<Map<String,Object>> all(NeoflixApp.Params params, String userId) {
+        // Open a new session
+        try (var session = this.driver.session()) {
+
+        // tag::allcypher[]
+        // Execute a query in a new Read Transaction
+        var movies = session.readTransaction(tx -> {
+        // Get an array of IDs for the User's favorite movies
+        var favorites =  getUserFavorites(tx, userId);
+
+        // Retrieve a list of movies with the
+        // favorite flag appened to the movie's properties
+            NeoflixApp.Params.Sort sort = params.sort(NeoflixApp.Params.Sort.title);
+            String query = String.format("""
+                    MATCH (m:Movie)
+                    WHERE m.`%s` IS NOT NULL
+                    RETURN m {
+                      .*,
+                      favorite: m.tmdbId IN $favorites
+                    } AS movie
+                    ORDER BY m.`%s` %s
+                    SKIP $skip
+                    LIMIT $limit
+                    """, sort, sort, params.order());
+            var res= tx.run(query
+            , Values.parameters( "skip", params.skip(), "limit", params.limit(), "favorites",favorites));
+            // tag::allmovies[]
+            // Get a list of Movies from the Result
+            return res.list(row -> row.get("movie").asMap());
+            // end::allmovies[]
+
+        });
+        // end::allcypher[]
+
+        // tag::return[]
+        return movies;
+        // end::return[]
+        }
+    }
+    // end::all[]
+
+
+    /**
+     * @public
+     * This method find a Movie node with the ID passed as the `id` parameter.
+     * Along with the returned payload, a list of actors, directors, and genres should
+     * be included.
+     * The number of incoming RATED relationships should also be returned as `ratingCount`
+     *
+     * If a userId value is suppled, a `favorite` boolean property should be returned to
+     * signify whether the user has aded the movie to their "My Favorites" list.
+     *
+     * @param {string} id
+     * @returns {Promise<Record<string, any>>}
+     */
+    // tag::findById[]
+    public Map<String,Object> findById(String id, String userId) {
+        // Find a movie by its ID
+        // MATCH (m:Movie {tmdbId: $id})
+
+        // Open a new database session
+        try (var session = this.driver.session()) {
+
+            // Find a movie by its ID
+            return session.readTransaction(tx -> {
+                var favorites = getUserFavorites(tx, userId);
+
+                var res = tx.run("""
+                                MATCH (m:Movie {tmdbId: $id})
+                                RETURN m {
+                                  .*,
+                                    actors: [ (a)-[r:ACTED_IN]->(m) | a { .*, role: r.role } ],
+                                    directors: [ (d)-[:DIRECTED]->(m) | d { .* } ],
+                                    genres: [ (m)-[:IN_GENRE]->(g) | g { .name }],
+                                    ratingCount: size((m)<-[:RATED]-()),
+                                    favorite: m.tmdbId IN $favorites
+                                } AS movie
+                                LIMIT 1
+                        """, Values.parameters("id", id, "favorites", favorites));
+                return res.single().get("movie").asMap();
+            });
+
+        }
+    }
+    // end::findById[]
+
+    /**
+     * This method should return a paginated list of similar movies to the Movie with the
+     * id supplied.  This similarity is calculated by finding movies that have many first
+     * degree connections in common: Actors, Directors and Genres.
+     *
+     * Results should be ordered by the `sort` parameter, and in the direction specified
+     * in the `order` parameter.
+     * Results should be limited to the number passed as `limit`.
+     * The `skip` variable should be used to skip a certain number of rows.
+     *
+     * If a userId value is suppled, a `favorite` boolean property should be returned to
+     * signify whether the user has aded the movie to their "My Favorites" list.
+     *
+     * @param id
+     * @param params Query parameters for pagination and ordering
+     * @param userId
+     * @returns List<Movie> similar movies
+     */
+    // tag::getSimilarMovies[]
+    public List<Map<String,Object>> getSimilarMovies(String id, NeoflixApp.Params params, String userId) {
+        // Get similar movies based on genres or ratings
+        // MATCH (:Movie {tmdbId: $id})-[:IN_GENRE|ACTED_IN|DIRECTED]->()<-[:IN_GENRE|ACTED_IN|DIRECTED]-(m)
+
+        // Open an Session
+        try (var session = this.driver.session()) {
+
+            // Get similar movies based on genres or ratings
+            var movies = session.readTransaction(tx -> {
+                var favorites = getUserFavorites(tx, userId);
+                String query = """
+                                          
+                          MATCH (:Movie {tmdbId: $id})-[:IN_GENRE|ACTED_IN|DIRECTED]->()<-[:IN_GENRE|ACTED_IN|DIRECTED]-(m)
+                          WHERE m.imdbRating IS NOT NULL
+                            
+                          WITH m, count(*) AS inCommon
+                          WITH m, inCommon, m.imdbRating * inCommon AS score
+                          ORDER BY score DESC
+                            
+                          SKIP $skip
+                          LIMIT $limit
+                            
+                          RETURN m {
+                            .*,
+                              score: score,
+                              favorite: m.tmdbId IN $favorites
+                          } AS movie
+                        """;
+                var res = tx.run(query, Values.parameters("id", id, "skip", params.skip(), "limit", params.limit(), "favorites", favorites));
+                // Get a list of Movies from the Result
+                return res.list(row -> row.get("movie").asMap());
+            });
+
+            return movies;
+        }
+    }
+    // end::getSimilarMovies[]
+
 
     /**
      * This method should return a paginated list of movies that have a relationship to the
@@ -27,12 +188,12 @@ public class MovieService {
      * signify whether the user has added the movie to their "My Favorites" list.
      *
      * @param name
-     * @param query
+     * @param params Query parameters for pagination and ordering
      * @param userId
      * @return List<Movie> movies for that genre
      */
     // tag::getByGenre[]
-    public List<Map<String,Object>> byGenre(String name, NeoflixApp.Query query, String userId) {
+    public List<Map<String,Object>> byGenre(String name, NeoflixApp.Params params, String userId) {
         // Get Movies in a Genre
         // MATCH (m:Movie)-[:IN_GENRE]->(:Genre {name: $name})
 
@@ -57,8 +218,8 @@ public class MovieService {
                                   ORDER BY m.`%s` %s
                                   SKIP $skip
                                   LIMIT $limit
-                                """,query.sort(),query.sort(),query.order()),
-                        Values.parameters("skip", query.skip(), "limit", query.limit(),
+                                """, params.sort(), params.sort(), params.order()),
+                        Values.parameters("skip", params.skip(), "limit", params.limit(),
                                 "favorites", favorites, "name", name));
                 var movies = result.list(row -> row.get("movie").asMap());
                 return movies;

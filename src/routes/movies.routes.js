@@ -87,7 +87,7 @@ router.get('/:id/ratings', async (req, res, next) => {
     next(e)
   }
 })
-// ennd::ratings[]
+// end::ratings[]
 
 /**
  * @GET /movies/:id/similar

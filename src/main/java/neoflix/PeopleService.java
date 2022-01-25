@@ -27,15 +27,11 @@ class PeopleService {
      * number passed as `limit`.  The `skip` variable should be used to skip a
      * certain number of rows.
      *
-     * @param query    Used to filter on the person's name
-     * @param sort        Field in which to order the records
-     * @param order          Direction for the order (ASC/DESC)
-     * @param limit          The total number of records to return
-     * @param skip           The number of records to skip
+     * @param params        Used to filter on the person's name, and query parameters for pagination and ordering
      * @return List<Person>
      */
     // tag::all[]
-    public List<Map<String,Object>> all(NeoflixApp.Query query) {
+    public List<Map<String,Object>> all(NeoflixApp.Params params) {
         // Open a new database session
         try (var session = driver.session()) {
 
@@ -48,9 +44,9 @@ class PeopleService {
                         ORDER BY p.`%s` %s
                         SKIP $skip
                         LIMIT $limit
-                        """, query.sort(NeoflixApp.Query.Sort.name), query.order());
+                        """, params.sort(NeoflixApp.Params.Sort.name), params.order());
                 return tx.run(statement
-                            , Values.parameters("q", query.query(), "skip", query.skip(), "limit", query.limit()))
+                            , Values.parameters("q", params.query(), "skip", params.skip(), "limit", params.limit()))
                         .list(row -> row.get("person").asMap());
             });
 
@@ -75,18 +71,20 @@ class PeopleService {
         // Open a new database session
         try (var session = driver.session()) {
 
-            // Get a list of people from the database
-            var res = session.readTransaction(tx -> tx.run(
-                            """
-                                        MATCH (p:Person {tmdbId: $id})
-                                        RETURN p {
-                                            .*,
-                                            actedCount: size((p)-[:ACTED_IN]->()),
-                                            directedCount: size((p)-[:DIRECTED]->())
-                                        } AS person
-                                    """, Values.parameters("id", id)))
-                    .single().get("person").asMap();
-            return res;
+            // Get a person from the database
+            var person = session.readTransaction(tx -> {
+                        String query = """
+                                    MATCH (p:Person {tmdbId: $id})
+                                    RETURN p {
+                                        .*,
+                                        actedCount: size((p)-[:ACTED_IN]->()),
+                                        directedCount: size((p)-[:DIRECTED]->())
+                                    } AS person
+                                """;
+                        var res = tx.run(query, Values.parameters("id", id));
+                        return res.single().get("person").asMap();
+                    });
+            return person;
         }
     }
     // end::findById[]
@@ -96,12 +94,11 @@ class PeopleService {
      * in descending order.
      *
      * @param id     The ID of the user
-     * @param limit  The total number of records to return
-     * @param skip   The number of records to skip
-     * @returns List<Person> similar people
+     * @param params Query parameters for pagination and ordering
+     * @return List<Person> similar people
      */
     // tag::getSimilarPeople[]
-    public List<Map<String,Object>> getSimilarPeople(String id, NeoflixApp.Query query) {
+    public List<Map<String,Object>> getSimilarPeople(String id, NeoflixApp.Params params) {
         // Open a new database session
         try (var session = driver.session()) {
 
@@ -117,7 +114,7 @@ class PeopleService {
                     ORDER BY size(person.inCommon) DESC
                     SKIP $skip
                     LIMIT $limit
-                    """,Values.parameters("id",id, "skip", query.skip(), "limit",query.limit()))
+                    """,Values.parameters("id",id, "skip", params.skip(), "limit", params.limit()))
                     .list(row -> row.get("person").asMap()));
 
             return res;
