@@ -9,6 +9,7 @@ import spark.Request;
 import spark.RouteGroup;
 
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Properties;
 
 public class NeoflixApp {
@@ -145,7 +146,8 @@ public class NeoflixApp {
             // tag::get[]
             get("/:id", (req, res) -> {
                 var userId = req.headers("user"); // TODO
-                return movieService.findById(req.params(":id"),userId);
+                Map<String, Object> movie = movieService.findById(req.params(":id"), userId);
+                return movie;
             }, gson::toJson);
 
             /*

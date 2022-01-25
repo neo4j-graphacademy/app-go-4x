@@ -98,7 +98,7 @@ public class MovieService {
             return session.readTransaction(tx -> {
                 var favorites = getUserFavorites(tx, userId);
 
-                var res = tx.run("""
+                String query = """
                                 MATCH (m:Movie {tmdbId: $id})
                                 RETURN m {
                                   .*,
@@ -109,7 +109,8 @@ public class MovieService {
                                     favorite: m.tmdbId IN $favorites
                                 } AS movie
                                 LIMIT 1
-                        """, Values.parameters("id", id, "favorites", favorites));
+                        """;
+                var res = tx.run(query, Values.parameters("id", id, "favorites", favorites));
                 return res.single().get("movie").asMap();
             });
 
