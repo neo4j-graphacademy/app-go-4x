@@ -36,12 +36,12 @@ public class GenreService {
             // Get a list of Genres from the database
             var query = """
                     MATCH (g:Genre)
+                    WHERE g.name <> '(no genres listed)'
                     CALL {
                       WITH g
                       MATCH (g)<-[:IN_GENRE]-(m:Movie)
                       WHERE m.imdbRating IS NOT NULL
                       AND m.poster IS NOT NULL
-                      AND g.name <> '(no genres listed)'
                       RETURN m.poster AS poster
                       ORDER BY m.imdbRating DESC LIMIT 1
                     }

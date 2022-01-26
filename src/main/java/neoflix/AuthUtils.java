@@ -7,26 +7,11 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 
 public class AuthUtils {
-    public static final SecureRandom RANDOM = new SecureRandom();
-    static MessageDigest MESSAGE_DIGEST;
-
-    static {
-        try {
-            MESSAGE_DIGEST = MessageDigest.getInstance("SHA-512");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("No Such Encryption Algorithm ", e);
-        }
-    }
 
     public static String encryptPassword(String password) {
         return BCrypt.withDefaults().hashToString(12, password.toCharArray());
