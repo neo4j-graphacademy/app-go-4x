@@ -8,24 +8,28 @@ import neoflix.services.AuthService;
 import org.neo4j.driver.*;
 import spark.Request;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
 public class NeoflixApp {
 
+    public static final Properties PROPS = new Properties() {{
+        try {
+            load(NeoflixApp.class.getResourceAsStream("/application.properties"));
+        } catch (IOException e) {
+            throw new RuntimeException("Error loading application.properties",e);
+        }
+    }};
+
     public static void main(String[] args) throws Exception {
-        Properties props = new Properties();
-        props.load(NeoflixApp.class.getResourceAsStream("/application.properties"));
-
-        String jwtSecret = props.getProperty("JWT_SECRET");
-        int port = Integer.parseInt(props.getProperty("APP_PORT", "3000"));
+        int port = Integer.parseInt(PROPS.getProperty("APP_PORT", "3000"));
         port(port);
-        staticFiles.location("/public");
-
-        AuthToken auth = AuthTokens.basic(props.getProperty("NEO4J_USERNAME"), props.getProperty("NEO4J_PASSWORD"));
-        Driver driver = GraphDatabase.driver(props.getProperty("NEO4J_URI"), auth);
+        Driver driver = getDriver();
         Gson gson = GsonUtils.gson();
 
+        staticFiles.location("/public");
+        String jwtSecret = PROPS.getProperty("JWT_SECRET");
         before((req, res) -> {
             String token = req.headers("Authorization");
             String bearer = "Bearer ";
@@ -44,6 +48,11 @@ public class NeoflixApp {
             path("/people", new PeopleRoutes(driver,gson));
         });
         System.out.printf("Started server at port %d%n",port);
+    }
+
+    static Driver getDriver() {
+        AuthToken auth = AuthTokens.basic(PROPS.getProperty("NEO4J_USERNAME"), PROPS.getProperty("NEO4J_PASSWORD"));
+        return GraphDatabase.driver(PROPS.getProperty("NEO4J_URI"), auth);
     }
 
     public static String getUserId(Request req) {
