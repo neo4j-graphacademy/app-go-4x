@@ -1,12 +1,14 @@
-package neoflix;
+package neoflix.services;
 
+import neoflix.NeoflixApp;
+import neoflix.Params;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Values;
 
 import java.util.List;
 import java.util.Map;
 
-class PeopleService {
+public class PeopleService {
     private final Driver driver;
 
     /**
@@ -31,7 +33,7 @@ class PeopleService {
      * @return List<Person>
      */
     // tag::all[]
-    public List<Map<String,Object>> all(NeoflixApp.Params params) {
+    public List<Map<String,Object>> all(Params params) {
         // Open a new database session
         try (var session = driver.session()) {
 
@@ -44,7 +46,7 @@ class PeopleService {
                         ORDER BY p.`%s` %s
                         SKIP $skip
                         LIMIT $limit
-                        """, params.sort(NeoflixApp.Params.Sort.name), params.order());
+                        """, params.sort(Params.Sort.name), params.order());
                 return tx.run(statement
                             , Values.parameters("q", params.query(), "skip", params.skip(), "limit", params.limit()))
                         .list(row -> row.get("person").asMap());
@@ -98,7 +100,7 @@ class PeopleService {
      * @return List<Person> similar people
      */
     // tag::getSimilarPeople[]
-    public List<Map<String,Object>> getSimilarPeople(String id, NeoflixApp.Params params) {
+    public List<Map<String,Object>> getSimilarPeople(String id, Params params) {
         // Open a new database session
         try (var session = driver.session()) {
 

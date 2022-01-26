@@ -1,5 +1,7 @@
-package neoflix;
+package neoflix.services;
 
+import neoflix.NeoflixApp;
+import neoflix.Params;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.Values;
@@ -31,7 +33,7 @@ public class MovieService {
      * @returns {Promise<Record<string, any>[]>}
      */
     // tag::all[]
-    public List<Map<String,Object>> all(NeoflixApp.Params params, String userId) {
+    public List<Map<String,Object>> all(Params params, String userId) {
         // Open a new session
         try (var session = this.driver.session()) {
 
@@ -43,7 +45,7 @@ public class MovieService {
 
         // Retrieve a list of movies with the
         // favorite flag appened to the movie's properties
-            NeoflixApp.Params.Sort sort = params.sort(NeoflixApp.Params.Sort.title);
+            Params.Sort sort = params.sort(Params.Sort.title);
             String query = String.format("""
                     MATCH (m:Movie)
                     WHERE m.`%s` IS NOT NULL
@@ -137,7 +139,7 @@ public class MovieService {
      * @returns List<Movie> similar movies
      */
     // tag::getSimilarMovies[]
-    public List<Map<String,Object>> getSimilarMovies(String id, NeoflixApp.Params params, String userId) {
+    public List<Map<String,Object>> getSimilarMovies(String id, Params params, String userId) {
         // Get similar movies based on genres or ratings
         // MATCH (:Movie {tmdbId: $id})-[:IN_GENRE|ACTED_IN|DIRECTED]->()<-[:IN_GENRE|ACTED_IN|DIRECTED]-(m)
 
@@ -194,7 +196,7 @@ public class MovieService {
      * @return List<Movie> movies for that genre
      */
     // tag::getByGenre[]
-    public List<Map<String,Object>> byGenre(String name, NeoflixApp.Params params, String userId) {
+    public List<Map<String,Object>> byGenre(String name, Params params, String userId) {
         // Get Movies in a Genre
         // MATCH (m:Movie)-[:IN_GENRE]->(:Genre {name: $name})
 
@@ -247,7 +249,7 @@ public class MovieService {
      * @return List<Movie>
      */
     // tag::getForActor[]
-    public List<Map<String,Object>> getForActor(String actorId, NeoflixApp.Params params,String userId) {
+    public List<Map<String,Object>> getForActor(String actorId, Params params,String userId) {
         // Get Movies acted in by a Person
         // MATCH (:Person {tmdbId: $id})-[:ACTED_IN]->(m:Movie)
 
@@ -258,7 +260,7 @@ public class MovieService {
             var movies = session.readTransaction(tx -> {
                 // Get an array of IDs for the User's favorite movies
                 var favorites = getUserFavorites(tx, userId);
-                var sort = params.sort(NeoflixApp.Params.Sort.title);
+                var sort = params.sort(Params.Sort.title);
 
                 // Retrieve a list of movies with the
                 // favorite flag appended to the movie's properties
@@ -300,7 +302,7 @@ public class MovieService {
      * @return List<Movie>
      */
     // tag::getForActor[]
-    public List<Map<String,Object>> getForDirector(String directorId, NeoflixApp.Params params,String userId) {
+    public List<Map<String,Object>> getForDirector(String directorId, Params params,String userId) {
         // Get Movies acted in by a Person
         // MATCH (:Person {tmdbId: $id})-[:DIRECTED]->(m:Movie)
 
@@ -311,7 +313,7 @@ public class MovieService {
             var movies = session.readTransaction(tx -> {
                 // Get an array of IDs for the User's favorite movies
                 var favorites = getUserFavorites(tx, userId);
-                var sort = params.sort(NeoflixApp.Params.Sort.title);
+                var sort = params.sort(Params.Sort.title);
 
                 // Retrieve a list of movies with the
                 // favorite flag appended to the movie's properties

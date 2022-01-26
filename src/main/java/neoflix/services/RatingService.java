@@ -1,5 +1,7 @@
-package neoflix;
+package neoflix.services;
 
+import neoflix.NeoflixApp;
+import neoflix.Params;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.Values;
@@ -34,7 +36,7 @@ public class RatingService {
      * @returns {Promise<Record<string, any>>}
      */
     // tag::forMovie[]
-    public List<Map<String,Object>> forMovie(String id, NeoflixApp.Params params) {
+    public List<Map<String,Object>> forMovie(String id, Params params) {
         // Open a new database session
         try (var session = this.driver.session()) {
 
@@ -49,7 +51,7 @@ public class RatingService {
                         } AS review
                         ORDER BY r.`%s` %s
                         SKIP $skip
-                        LIMIT $limit""", params.sort(NeoflixApp.Params.Sort.timestamp), params.order());
+                        LIMIT $limit""", params.sort(Params.Sort.timestamp), params.order());
                 var res = tx.run(query, Values.parameters("id", id, "limit", params.limit(), "skip", params.skip()));
                 return res.list(row -> row.get("review").asMap());
             });

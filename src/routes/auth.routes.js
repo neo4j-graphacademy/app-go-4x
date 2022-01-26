@@ -27,7 +27,7 @@ router.post('/login',
 
 
 /**
- * @POST /auth/login
+ * @POST /auth/register
  *
  * This route should use the AuthService to create a new User node
  * in the database with an encrypted password before returning a User record which

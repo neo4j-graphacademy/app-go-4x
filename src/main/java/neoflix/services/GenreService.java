@@ -1,4 +1,4 @@
-package neoflix;
+package neoflix.services;
 
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Value;
@@ -6,7 +6,7 @@ import org.neo4j.driver.Values;
 
 import java.util.List;
 
-class GenreService {
+public class GenreService {
     private final Driver driver;
 
     public GenreService(Driver driver) {

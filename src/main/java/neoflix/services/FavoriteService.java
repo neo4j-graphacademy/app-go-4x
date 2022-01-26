@@ -1,5 +1,7 @@
-package neoflix;
+package neoflix.services;
 
+import neoflix.NeoflixApp;
+import neoflix.Params;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Result;
@@ -37,7 +39,7 @@ public class FavoriteService {
      * @return List<Movie> An list of Movie objects
      */
     // tag::all[]
-    public List<Map<String, Object>> all(String userId, NeoflixApp.Params params) {
+    public List<Map<String, Object>> all(String userId, Params params) {
         // Open a new session
         try (var session = this.driver.session()) {
 
@@ -52,7 +54,7 @@ public class FavoriteService {
                             ORDER BY m.`%s` %s
                             SKIP $skip
                             LIMIT $limit
-                        """, params.sort(NeoflixApp.Params.Sort.title), params.order());
+                        """, params.sort(Params.Sort.title), params.order());
                 var res = tx.run(query, Values.parameters("userId", userId, "skip", params.skip(), "limit", params.limit()));
                 return res.list(row -> row.get("movie").asMap());
             });
