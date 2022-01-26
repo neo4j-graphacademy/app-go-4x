@@ -282,7 +282,7 @@ public class NeoflixApp {
 
     private static String getUserId(Request req) {
         Object user = req.attribute("user");
-        if (user instanceof Map) return null;
+        if (!(user instanceof Map)) return null;
         return (String) ((Map<String, Object>) user).get("userId"); // todo
     }
 
