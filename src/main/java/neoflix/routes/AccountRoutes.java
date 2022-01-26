@@ -52,7 +52,7 @@ public class AccountRoutes implements RouteGroup {
         // tag::add[]
         post("/favorites/:id", (req, res) -> {
             String userId = NeoflixApp.getUserId(req);
-            return favoriteService.add(req.params(":id"), userId);
+            return favoriteService.add(userId, req.params(":id"));
         }, gson::toJson);
         // end::add[]
 
@@ -65,7 +65,7 @@ public class AccountRoutes implements RouteGroup {
         // tag::delete[]
         delete("/favorites/:id", (req, res) -> {
             String userId = NeoflixApp.getUserId(req); // TODO
-            return favoriteService.remove(req.params(":id"), userId);
+            return favoriteService.remove(userId, req.params(":id"));
         }, gson::toJson);
         // end::delete[]
 
