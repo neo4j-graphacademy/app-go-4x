@@ -4,17 +4,15 @@ import static spark.Spark.*;
 
 import com.google.gson.Gson;
 import neoflix.routes.*;
-import neoflix.services.AuthService;
 import org.neo4j.driver.*;
 import spark.Request;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Properties;
 
 public class NeoflixApp {
 
-    public static final Properties PROPS = new Properties() {{
+    static final Properties PROPS = new Properties() {{
         try {
             load(NeoflixApp.class.getResourceAsStream("/application.properties"));
         } catch (IOException e) {
@@ -25,7 +23,7 @@ public class NeoflixApp {
     public static void main(String[] args) throws Exception {
         int port = Integer.parseInt(PROPS.getProperty("APP_PORT", "3000"));
         port(port);
-        Driver driver = getDriver();
+        Driver driver = initDriver();
         Gson gson = GsonUtils.gson();
 
         staticFiles.location("/public");
@@ -50,9 +48,11 @@ public class NeoflixApp {
         System.out.printf("Started server at port %d%n",port);
     }
 
-    static Driver getDriver() {
+    static Driver initDriver() {
         AuthToken auth = AuthTokens.basic(PROPS.getProperty("NEO4J_USERNAME"), PROPS.getProperty("NEO4J_PASSWORD"));
-        return GraphDatabase.driver(PROPS.getProperty("NEO4J_URI"), auth);
+        Driver driver = GraphDatabase.driver(PROPS.getProperty("NEO4J_URI"), auth);
+        driver.verifyConnectivity();
+        return driver;
     }
 
     public static String getUserId(Request req) {
