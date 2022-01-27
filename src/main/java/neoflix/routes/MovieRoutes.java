@@ -19,7 +19,7 @@ public class MovieRoutes implements RouteGroup {
 
     public MovieRoutes(Driver driver, Gson gson) {
         this.gson = gson;
-        movieService = new MovieService(driver);
+        movieService = new MovieService(driver);  // <1>
         ratingService = new RatingService(driver);
     }
 
@@ -33,8 +33,8 @@ public class MovieRoutes implements RouteGroup {
          */
         // tag::list[]
         get("", (req, res) -> {
-            String userId = AppUtils.getUserId(req);
-            return movieService.all(Params.parse(req, Params.MOVIE_SORT), userId);
+            String userId = AppUtils.getUserId(req);  // <2>
+            return movieService.all(Params.parse(req, Params.MOVIE_SORT), userId);  // <3>
         }, gson::toJson);
         // end::list[]
 

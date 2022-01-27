@@ -1,3 +1,5 @@
+// mvn test -Dtest=neoflix._02_MovieListTest#applyOrderListAndSkip
+// mvn test -Dtest=neoflix._02_MovieListTest#orderMoviesByRating
 package neoflix;
 
 import neoflix.services.MovieService;

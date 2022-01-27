@@ -1,10 +1,10 @@
 package neoflix.services;
 
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 
 import java.util.List;
+import java.util.Map;
 
 public class GenreService {
     private final Driver driver;
@@ -30,7 +30,7 @@ public class GenreService {
      * @return List<Genre> genres
      */
     // tag::all[]
-    public List<Genre> all() {
+    public List<Map<String,Object>> all() {
         // Open a new Session, close automatically at the end
         try (var session = driver.session()) {
             // Get a list of Genres from the database
@@ -56,17 +56,7 @@ public class GenreService {
             var genres = session.readTransaction(
                     tx -> tx.run(query)
                             .list(row ->
-                                row.get("genre")
-                                .computeOrDefault(v ->
-                                        new Genre(
-                                                v.get("name").asString(),
-                                                v.get("poster").asString(),
-                                                v.get("movies").asLong(),
-                                                v.get("link").asString()),
-                                        null)
-                            ));
-
-                            // alternative .list(row ->row.get("genre").asMap()));
+                                row.get("genre").asMap()));
 
             // Return results
             return genres;
@@ -84,7 +74,7 @@ public class GenreService {
      * @return Genre  The genre information
      */
     // tag::find[]
-    public Genre find(String name) {
+    public Map<String,Object> find(String name) {
         // Open a new Session, close automatically at the end
         try (var session = driver.session()) {
             // Get a list of Genres from the database
@@ -108,24 +98,10 @@ public class GenreService {
             var genre = session.readTransaction(
                     tx -> tx.run(query, Values.parameters("name", name))
                             // Throw a NoSuchRecordException if the genre is not found
-                            .single().get("genre")
-                                .computeOrDefault(v ->
-                                                new Genre(
-                                                        v.get("name").asString(),
-                                                        v.get("poster").asString(),
-                                                        v.get("movies").asLong(),
-                                                        v.get("link").asString()
-                                                        ),
-                                        null)
-                            );
-
-            // alternative .list(row ->row.get("genre").asMap()));
-
+                            .single().get("genre").asMap());
             // Return results
             return genre;
         }
     }
     // end::find[]
-
-    public record Genre(String name, String poster, long movies, String link) { }
 }

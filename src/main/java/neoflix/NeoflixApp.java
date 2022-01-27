@@ -12,7 +12,9 @@ public class NeoflixApp {
         AppUtils.loadProperties();
         int port = AppUtils.getServerPort();
         port(port);
+        // tag::driver[]
         Driver driver = AppUtils.initDriver();
+        // end::driver[]
         Gson gson = GsonUtils.gson();
 
         staticFiles.location("/public");

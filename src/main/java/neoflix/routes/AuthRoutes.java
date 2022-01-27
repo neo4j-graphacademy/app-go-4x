@@ -32,7 +32,9 @@ public class AuthRoutes implements RouteGroup {
         post("/login", (req, res) -> {
             UserData userData = gson.fromJson(req.body(), UserData.class);
             var user = authService.authenticate(userData.email, userData.password);
-            req.attribute("user", user.get("userId"));
+            if (user != null) {
+                req.attribute("user", user.get("userId"));
+            }
             return user;
         }, gson::toJson);
         // end::login[]

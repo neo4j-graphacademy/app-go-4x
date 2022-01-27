@@ -1,5 +1,6 @@
 package neoflix;
 
+import com.google.gson.Gson;
 import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
@@ -7,11 +8,14 @@ import org.neo4j.driver.GraphDatabase;
 import spark.Request;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.Map;
 
 public class AppUtils {
     static void loadProperties() {
         try {
-            System.getProperties().load(ClassLoader.getSystemResourceAsStream("application.properties"));
+            System.getProperties().load(AppUtils.class.getResourceAsStream("/application.properties"));
         } catch (IOException e) {
             throw new RuntimeException("Error loading application.properties", e);
         }
@@ -34,12 +38,14 @@ public class AppUtils {
         }
     }
 
+    // tag::initDriver[]
     static Driver initDriver() {
         AuthToken auth = AuthTokens.basic(System.getProperty("NEO4J_USERNAME"), System.getProperty("NEO4J_PASSWORD"));
         Driver driver = GraphDatabase.driver(System.getProperty("NEO4J_URI"), auth);
         driver.verifyConnectivity();
         return driver;
     }
+    // end::initDriver[]
 
     static int getServerPort() {
         return Integer.parseInt(System.getProperty("APP_PORT", "3000"));
@@ -47,5 +53,14 @@ public class AppUtils {
 
     static String getJwtSecret() {
         return System.getProperty("JWT_SECRET");
+    }
+
+    public static List<Map<String,Object>> loadFixtureList(final String name) {
+        var fixture = new InputStreamReader(AppUtils.class.getResourceAsStream("/fixtures/" + name + ".json"));
+        return new Gson().fromJson(fixture,List.class);
+    }
+    public static Map<String,Object> loadFixtureSingle(final String name) {
+        var fixture = new InputStreamReader(AppUtils.class.getResourceAsStream("/fixtures/" + name + ".json"));
+        return new Gson().fromJson(fixture,Map.class);
     }
 }

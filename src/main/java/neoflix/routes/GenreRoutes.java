@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import neoflix.Params;
 import neoflix.AppUtils;
 import neoflix.services.GenreService;
+import neoflix.services.GenreServiceFixture;
 import neoflix.services.MovieService;
 import org.neo4j.driver.Driver;
 import spark.RouteGroup;
@@ -16,7 +17,7 @@ public class GenreRoutes implements RouteGroup {
     private final MovieService movieService;
 
     public GenreRoutes(Driver driver, Gson gson) {
-        genreService = new GenreService(driver);
+        genreService = new GenreService(driver); // new GenreServiceFixture();
         movieService = new MovieService(driver);
         this.gson = gson;
     }
