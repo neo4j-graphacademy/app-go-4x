@@ -1,8 +1,8 @@
 package neoflix.routes;
 
 import com.google.gson.Gson;
-import neoflix.NeoflixApp;
 import neoflix.Params;
+import neoflix.AppUtils;
 import neoflix.services.MovieService;
 import neoflix.services.RatingService;
 import org.neo4j.driver.Driver;
@@ -33,7 +33,7 @@ public class MovieRoutes implements RouteGroup {
          */
         // tag::list[]
         get("", (req, res) -> {
-            String userId = NeoflixApp.getUserId(req); // TODO
+            String userId = AppUtils.getUserId(req);
             return movieService.all(Params.parse(req, Params.MOVIE_SORT), userId);
         }, gson::toJson);
         // end::list[]
@@ -45,7 +45,7 @@ public class MovieRoutes implements RouteGroup {
          */
         // tag::get[]
         get("/:id", (req, res) -> {
-            String userId = NeoflixApp.getUserId(req); // TODO
+            String userId = AppUtils.getUserId(req);
             Map<String, Object> movie = movieService.findById(req.params(":id"), userId);
             return movie;
         }, gson::toJson);
@@ -69,7 +69,7 @@ public class MovieRoutes implements RouteGroup {
          */
         // tag::similar[]
         get("/:id/similar", (req, res) -> {
-            String userId = NeoflixApp.getUserId(req); // TODO
+            String userId = AppUtils.getUserId(req);
             return movieService.getSimilarMovies(req.params(":id"), Params.parse(req, Params.MOVIE_SORT), userId);
         }, gson::toJson);
         // end::similar[]

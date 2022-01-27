@@ -1,7 +1,7 @@
 package neoflix.routes;
 
 import com.google.gson.Gson;
-import neoflix.NeoflixApp;
+import neoflix.AppUtils;
 import neoflix.services.AuthService;
 import org.neo4j.driver.Driver;
 import spark.RouteGroup;
@@ -24,13 +24,9 @@ public class AuthRoutes implements RouteGroup {
         /*
          * @POST /auth/login
          *
-         * TODO This route invokes the `Neo4jStrategy` in `src/passport/neo4j.strategy.js`,
-         * which, when implemented, attempts to authenticate the user against the
-         * Neo4j database.
+         * Authenticates the user against the Neo4j database.
          *
-         * TODO The req.user object assigned by the strategy should include a `token` property,
-         * which holds the JWT token.  This token is then used in the `JwtStrategy` from
-         * `src/passport/jwt.strategy.js` to authenticate the request.
+         * The Authorization header contains a JWT token, which is used to authenticate the request.
          */
         // tag::login[]
         post("/login", (req, res) -> {
@@ -51,7 +47,7 @@ public class AuthRoutes implements RouteGroup {
          */
         // tag::register[]
         post("/register", (req, res) -> {
-            String userId = NeoflixApp.getUserId(req);
+            String userId = AppUtils.getUserId(req);
             UserData userData = gson.fromJson(req.body(), UserData.class);
 
             return authService.register(userData.email, userData.password, userData.name);

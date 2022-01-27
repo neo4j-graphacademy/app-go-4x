@@ -1,8 +1,8 @@
 package neoflix.routes;
 
 import com.google.gson.Gson;
-import neoflix.NeoflixApp;
 import neoflix.Params;
+import neoflix.AppUtils;
 import neoflix.services.GenreService;
 import neoflix.services.MovieService;
 import org.neo4j.driver.Driver;
@@ -47,7 +47,7 @@ public class GenreRoutes implements RouteGroup {
          * the genre whose name matches the :name URL parameter.
          */
         get("/:name/movies", (req, res) -> {
-            String userId = NeoflixApp.getUserId(req); // TODO
+            String userId = AppUtils.getUserId(req);
             return movieService.byGenre(req.params(":name"), Params.parse(req, Params.MOVIE_SORT), userId);
         }, gson::toJson);
     }

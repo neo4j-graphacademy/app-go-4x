@@ -1,8 +1,8 @@
 package neoflix.routes;
 
 import com.google.gson.Gson;
-import neoflix.NeoflixApp;
 import neoflix.Params;
+import neoflix.AppUtils;
 import neoflix.services.MovieService;
 import neoflix.services.PeopleService;
 import org.neo4j.driver.Driver;
@@ -52,7 +52,7 @@ public class PeopleRoutes implements RouteGroup {
          * with the :id has acted in.
          */
         get("/:id/acted", (req, res) -> {
-            String userId = NeoflixApp.getUserId(req); // TODO
+            String userId = AppUtils.getUserId(req);
             return movieService.getForActor(req.params(":id"), Params.parse(req, Params.MOVIE_SORT), userId);
         }, gson::toJson);
 
@@ -63,7 +63,7 @@ public class PeopleRoutes implements RouteGroup {
          * with the :id has acted in.
          */
         get("/:id/directed", (req, res) -> {
-            String userId = NeoflixApp.getUserId(req); // TODO
+            String userId = AppUtils.getUserId(req);
             return movieService.getForDirector(req.params(":id"), Params.parse(req, Params.MOVIE_SORT), userId);
         }, gson::toJson);
     }

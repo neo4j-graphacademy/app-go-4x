@@ -1,19 +1,15 @@
 package neoflix;
 
-import neoflix.Params.Order;
 import neoflix.services.MovieService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 
-import java.util.List;
-import java.util.Map;
-
-import static neoflix.NeoflixApp.PROPS;
 import static neoflix.Params.Order.ASC;
 import static neoflix.Params.Order.DESC;
-import static neoflix.Params.Sort.*;
+import static neoflix.Params.Sort.imdbRating;
+import static neoflix.Params.Sort.title;
 import static org.junit.jupiter.api.Assertions.*;
 
 class _02_MovieListTest {
@@ -22,7 +18,8 @@ class _02_MovieListTest {
 
     @BeforeAll
     static void initDriver() {
-        driver = NeoflixApp.initDriver();
+        AppUtils.loadProperties();
+        driver = AppUtils.initDriver();
     }
 
     @AfterAll

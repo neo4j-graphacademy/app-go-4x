@@ -1,8 +1,8 @@
 package neoflix.routes;
 
 import com.google.gson.Gson;
-import neoflix.NeoflixApp;
 import neoflix.Params;
+import neoflix.AppUtils;
 import neoflix.services.FavoriteService;
 import neoflix.services.RatingService;
 import org.neo4j.driver.Driver;
@@ -38,7 +38,7 @@ public class AccountRoutes implements RouteGroup {
          */
         // tag::list[]
         get("/favorites", (req, res) -> {
-            String userId = NeoflixApp.getUserId(req);
+            String userId = AppUtils.getUserId(req);
             return favoriteService.all(userId, Params.parse(req, Params.MOVIE_SORT));
         }, gson::toJson);
         // end::list[]
@@ -51,7 +51,7 @@ public class AccountRoutes implements RouteGroup {
          */
         // tag::add[]
         post("/favorites/:id", (req, res) -> {
-            String userId = NeoflixApp.getUserId(req);
+            String userId = AppUtils.getUserId(req);
             return favoriteService.add(userId, req.params(":id"));
         }, gson::toJson);
         // end::add[]
@@ -64,7 +64,7 @@ public class AccountRoutes implements RouteGroup {
          */
         // tag::delete[]
         delete("/favorites/:id", (req, res) -> {
-            String userId = NeoflixApp.getUserId(req); // TODO
+            String userId = AppUtils.getUserId(req); // TODO
             return favoriteService.remove(userId, req.params(":id"));
         }, gson::toJson);
         // end::delete[]
@@ -78,7 +78,7 @@ public class AccountRoutes implements RouteGroup {
          */
         // tag::rating[]
         post("/ratings/:id", (req, res) -> {
-            String userId = NeoflixApp.getUserId(req); // TODO
+            String userId = AppUtils.getUserId(req); // TODO
             int rating = Integer.parseInt(req.body());
             return ratingService.add(userId, req.params(":id"), rating);
         }, gson::toJson);
