@@ -1,3 +1,5 @@
+// Task: Rewrite the AuthService to save a user to the Neo4j database
+// Outcome: A User with a random email address should have been added to the database
 package neoflix;
 
 import neoflix.services.AuthService;
@@ -50,5 +52,21 @@ class _03_RegisterUserTest {
         assertNotNull(output.get("token"), "token property generated");
         assertNotNull(output.get("userId"), "userId property generated");
         assertNull(output.get("password"), "no password returned");
+
+        // Expect user exists in database
+        try (var session = driver.session()) {
+            session.readTransaction(tx -> {
+                    var user = tx.run(
+                            "MATCH (u:User {email: $email}) RETURN u",
+                            Values.parameters("email", email))
+                    .single().get("u").asMap();
+
+                assertEquals(user.get("email"), email, "email property");
+                assertEquals(user.get("name"), name, "name property");
+                assertNotNull(user.get("userId"), "userId property generated");
+                assertNotEquals(user.get("password"), password, "password was hashed");
+                return null;
+            });
+        }
     }
 }

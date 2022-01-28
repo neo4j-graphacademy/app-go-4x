@@ -1,5 +1,5 @@
 // Task: Rewrite the AuthService to save a user to the Neo4j database
-// Outcome: A User with a random email addess should have been added to the database
+// Outcome: A User with a random email address should have been added to the database
 
 import { config } from 'dotenv'
 import { closeDriver, getDriver, initDriver } from '../../src/neo4j'
