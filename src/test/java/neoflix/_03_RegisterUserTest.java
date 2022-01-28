@@ -43,20 +43,12 @@ class _03_RegisterUserTest {
         var limit = 1;
         var output = authService.register(email, password, name);
         assertNotNull(output);
-        assertEquals(1, output.size());
+        assertEquals(4, output.size(), "4 properties returned");
 
-        var userEmail = output.get("email");
-        assertNotNull(email);
-        assertEquals(email, userEmail);
-
-        var userPassword = output.get("password");
-        assertNotNull(password);
-
-        var userName = output.get("name");
-        assertNotNull(name);
-        assertEquals(name, name);
-
-        var token = output.get("token");
-        assertNotNull(name);
+        assertEquals(output.get("email"), email, "email property");
+        assertEquals(output.get("name"), name, "name property");
+        assertNotNull(output.get("token"), "token property generated");
+        assertNotNull(output.get("userId"), "userId property generated");
+        assertNull(output.get("password"), "no password returned");
     }
 }
