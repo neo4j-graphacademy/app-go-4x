@@ -1,9 +1,7 @@
 package neoflix.services;
 
-import neoflix.NeoflixApp;
 import neoflix.Params;
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.Transaction;
 import org.neo4j.driver.Values;
 
 import java.util.List;
