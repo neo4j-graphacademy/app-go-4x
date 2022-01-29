@@ -3,17 +3,12 @@
 package neoflix;
 
 import neoflix.services.AuthService;
-import neoflix.services.MovieService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Values;
 
-import static neoflix.Params.Order.ASC;
-import static neoflix.Params.Order.DESC;
-import static neoflix.Params.Sort.imdbRating;
-import static neoflix.Params.Sort.title;
 import static org.junit.jupiter.api.Assertions.*;
 
 class _03_RegisterUserTest {
@@ -42,7 +37,6 @@ class _03_RegisterUserTest {
     @Test
     void registerUser() {
         AuthService authService = new AuthService(driver, jwtSecret);
-        var limit = 1;
         var output = authService.register(email, password, name);
         assertNotNull(output);
         assertEquals(4, output.size(), "4 properties returned");

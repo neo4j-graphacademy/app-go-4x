@@ -1,0 +1,85 @@
+// Task: Rewrite the AuthService to allow users to authenticate against the database
+// Outcome: A user will be able to authenticate against their database record
+package neoflix;
+
+import neoflix.services.AuthService;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.Values;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class _05_AuthenticationTest {
+    private static Driver driver;
+    private static String jwtSecret;
+
+    private static String email = "authenticated@neo4j.com";
+    private static String password = "AuthenticateM3!";
+    private static String name = "Authenticated User";
+
+    @BeforeAll
+    static void initDriverAuth() {
+        AppUtils.loadProperties();
+        driver = AppUtils.initDriver();
+        jwtSecret = AppUtils.getJwtSecret();
+
+        driver.session().writeTransaction(tx -> tx.run("MATCH (u:User {email: $email}) DETACH DELETE u", Values.parameters("email", email)));
+    }
+
+    @AfterAll
+    static void closeDriver() {
+        driver.close();
+    }
+
+    @Test
+    void authenticateUser() {
+        AuthService authService = new AuthService(driver, jwtSecret);
+        authService.register(email, password, name);
+
+        var output = authService.authenticate(email, password);
+        assertEquals(output.get("email"), email, "email property");
+        assertEquals(output.get("name"), name, "name property");
+        assertNotNull(output.get("token"), "token property generated");
+        assertNotNull(output.get("userId"), "userId property generated");
+        assertNull(output.get("password"), "no password returned");
+    }
+
+    @Test
+    void tryAuthWithIncorrectPassword() {
+        AuthService authService = new AuthService(driver, jwtSecret);
+
+        try {
+            var incorrectPassword = authService.authenticate(email, "unknown");
+            assertEquals(false, incorrectPassword, "Auth should fail");
+        } catch (Exception e) {
+            assertEquals(e.getMessage(), "Cannot retrieve a single record, because this result is empty.");
+        }
+    }
+
+    @Test
+    void tryAuthWithIncorrectUsername() {
+        AuthService authService = new AuthService(driver, jwtSecret);
+
+        try {
+            var incorrectPassword = authService.authenticate("unknown", "unknown");
+            assertEquals(false, incorrectPassword, "Auth should fail");
+        } catch (Exception e) {
+            assertEquals(e.getMessage(), "Cannot retrieve a single record, because this result is empty.");
+        }
+    }
+
+    @Test
+    void setUserAuthTimestamp() {
+        try (var session = driver.session()) {
+            session.writeTransaction(tx -> {
+                var timestamp = tx.run("""
+                        MATCH (u:User {email: $email})
+                        SET u.authenticatedAt = datetime()
+                        """, Values.parameters("email", email));
+                return null;
+            });
+        }
+    }
+}
