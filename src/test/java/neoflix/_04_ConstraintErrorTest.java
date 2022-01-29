@@ -9,14 +9,16 @@ import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Values;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class _04_ConstraintErrorTest {
     private static Driver driver;
     private static String jwtSecret;
 
-    private static String email = "graphacademy@neo4j.com";
-    private static String password = "letmein";
+    private static String email = UUID.randomUUID() +"@neo4j.com";
+    private static String password = UUID.randomUUID().toString();
     private static String name = "Graph Academy";
 
     @BeforeAll
@@ -66,8 +68,8 @@ class _04_ConstraintErrorTest {
 
         //Retry with same credentials
         try {
-            var duplicate = authService.register(email, password, name);
-            assertEquals(false, duplicate, "Retry should fail");
+            authService.register(email, password, name);
+            fail("Retry should fail");
         } catch (Exception e) {
             assertEquals(e.getMessage(), "An account already exists with the email address");
         }

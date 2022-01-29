@@ -51,8 +51,8 @@ class _05_AuthenticationTest {
         AuthService authService = new AuthService(driver, jwtSecret);
 
         try {
-            var incorrectPassword = authService.authenticate(email, "unknown");
-            assertEquals(false, incorrectPassword, "Auth should fail");
+            authService.authenticate(email, "unknown");
+            fail("incorrect password auth should fail");
         } catch (Exception e) {
             assertEquals(e.getMessage(), "Cannot retrieve a single record, because this result is empty.");
         }
@@ -64,17 +64,18 @@ class _05_AuthenticationTest {
 
         try {
             var incorrectPassword = authService.authenticate("unknown", "unknown");
-            assertEquals(false, incorrectPassword, "Auth should fail");
+            fail("Auth with unknown username should fail");
         } catch (Exception e) {
             assertEquals(e.getMessage(), "Cannot retrieve a single record, because this result is empty.");
         }
     }
 
+    // we should probably have this called from the successful auth test
     @Test
     void setUserAuthTimestamp() {
         try (var session = driver.session()) {
             session.writeTransaction(tx -> {
-                var timestamp = tx.run("""
+                tx.run("""
                         MATCH (u:User {email: $email})
                         SET u.authenticatedAt = datetime()
                         """, Values.parameters("email", email));
