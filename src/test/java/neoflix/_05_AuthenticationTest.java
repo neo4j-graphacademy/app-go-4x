@@ -63,7 +63,7 @@ class _05_AuthenticationTest {
         AuthService authService = new AuthService(driver, jwtSecret);
 
         try {
-            var incorrectPassword = authService.authenticate("unknown", "unknown");
+            authService.authenticate("unknown", "unknown");
             fail("Auth with unknown username should fail");
         } catch (Exception e) {
             assertEquals(e.getMessage(), "Cannot retrieve a single record, because this result is empty.");
