@@ -56,4 +56,61 @@ class _11_MovieListTest {
         var reordered = movieService.byGenre(genreName, new Params(null, released, Params.Order.ASC, limit, limit), userId);
         assertNotEquals(output.get(0).get("title"), reordered.get(0).get("title"));
     }
+
+    @Test
+    void getPaginatedMoviesByActor() {
+        MovieService movieService = new MovieService(driver);
+
+        var limit = 2;
+
+        var output = movieService.getForActor(tomHanks, new Params(null, title, Params.Order.ASC, limit, 0), userId);
+        assertNotNull(output);
+        assertEquals(limit, output.size());
+
+        var secondOutput = movieService.getForActor(tomHanks, new Params(null, title, Params.Order.ASC, limit, limit), userId);
+        assertNotNull(secondOutput);
+        assertEquals(limit, secondOutput.size());
+
+        assertNotEquals(output.get(0).get("title"), secondOutput.get(0).get("title"));
+
+        var reordered = movieService.getForActor(tomHanks, new Params(null, released, Params.Order.ASC, limit, limit), userId);
+        assertNotEquals(output.get(0).get("title"), reordered.get(0).get("title"));
+    }
+
+    @Test
+    void getPaginatedMoviesByDirector() {
+        MovieService movieService = new MovieService(driver);
+
+        var limit = 1;
+
+        var output = movieService.getForDirector(tomHanks, new Params(null, title, Params.Order.ASC, limit, 0), userId);
+        assertNotNull(output);
+        assertEquals(limit, output.size());
+
+        var secondOutput = movieService.getForDirector(tomHanks, new Params(null, title, Params.Order.ASC, limit, limit), userId);
+        assertNotNull(secondOutput);
+        assertEquals(limit, secondOutput.size());
+
+        assertNotEquals(output.get(0).get("title"), secondOutput.get(0).get("title"));
+
+        var reordered = movieService.getForDirector(tomHanks, new Params(null, title, Params.Order.DESC, limit, 0), userId);
+        assertNotEquals(output.get(0).get("title"), reordered.get(0).get("title"));
+    }
+
+    @Test
+    void getMoviesDirectedByCoppola() {
+        MovieService movieService = new MovieService(driver);
+
+        var output = movieService.getForDirector(coppola, new Params(null, title, Params.Order.ASC, 30, 0), userId);
+        assertNotNull(output);
+        assertEquals(16, output.size());
+
+        System.out.println("""
+                
+                Here is the answer to the quiz question on the lesson:
+                How many films has Francis Ford Coppola directed?
+                Copy and paste the following answer into the text box:
+                """);
+        System.out.println(output.size());
+    }
 }
