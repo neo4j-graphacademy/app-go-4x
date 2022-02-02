@@ -2,8 +2,6 @@
 // Outcome: A user will be able to authenticate against their database record
 package neoflix;
 
-import neoflix.services.AuthService;
-import neoflix.services.MovieService;
 import neoflix.services.RatingService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

@@ -44,6 +44,8 @@ class _05_AuthenticationTest {
         assertNotNull(output.get("token"), "token property generated");
         assertNotNull(output.get("userId"), "userId property generated");
         assertNull(output.get("password"), "no password returned");
+
+        setUserAuthTestTimestamp();
     }
 
     @Test
@@ -70,9 +72,7 @@ class _05_AuthenticationTest {
         }
     }
 
-    // we should probably have this called from the successful auth test
-    @Test
-    void setUserAuthTimestamp() {
+    void setUserAuthTestTimestamp() {
         try (var session = driver.session()) {
             session.writeTransaction(tx -> {
                 tx.run("""

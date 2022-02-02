@@ -3,9 +3,9 @@
 package neoflix;
 
 import neoflix.services.FavoriteService;
-import neoflix.services.RatingService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Values;
@@ -25,9 +25,11 @@ class _07_FavoritesListTest {
         AppUtils.loadProperties();
         driver = AppUtils.initDriver();
 
-        driver.session().writeTransaction(tx -> tx.run("""
-                MERGE (u:User {userId: $userId}) SET u.email = $email
-                """, Values.parameters("userId", userId, "email", email)));
+        try (var session = driver.session()) {
+            session.writeTransaction(tx -> tx.run("""
+                    MERGE (u:User {userId: $userId}) SET u.email = $email
+                    """, Values.parameters("userId", userId, "email", email)));
+        }
     }
 
     @AfterAll
@@ -43,7 +45,16 @@ class _07_FavoritesListTest {
             favoriteService.add("unknown", "x999");
             fail("Adding favorite with unknown userId or movieId should fail");
         } catch (Exception e) {
-            assertEquals(e.getMessage(), "Couldn't create a favorite relationship for User unknown and Movie x999");
+            assertEquals("Couldn't create a favorite relationship for User unknown and Movie x999", e.getMessage());
+        }
+    }
+
+    @BeforeEach
+    void setUp() {
+        try (var session = driver.session()) {
+            session.writeTransaction(tx ->
+                    tx.run("MATCH (u:User {userId: $userId})-[r:HAS_FAVORITE]->(m:Movie) DELETE r",
+                            Values.parameters("userId", userId)));
         }
     }
 
@@ -54,14 +65,13 @@ class _07_FavoritesListTest {
         var output = favoriteService.add(userId, toyStory);
 
         assertNotNull(output);
-        assertEquals(output.get("tmdbId"), toyStory);
-        assertEquals(output.get("favorite"), true);
+        assertEquals(toyStory, output.get("tmdbId"));
+        assertTrue((Boolean)output.get("favorite"), "toy story is favorite");
 
         var favorites = favoriteService.all(userId, new Params(null, Params.Sort.title, Params.Order.DESC, 10, 0));
 
-        var movieFavorite = favorites.stream().filter(movie -> movie.get("tmdbId").equals(toyStory));
-        assertNotNull(movieFavorite);
-        assertEquals(movieFavorite.findAny().get().get("tmdbId"), toyStory);
+        var movieFavorite = favorites.stream().allMatch(movie -> movie.get("tmdbId").equals(toyStory));
+        assertTrue(movieFavorite, "only toy story is favorite movie");
     }
 
     @Test
@@ -69,20 +79,18 @@ class _07_FavoritesListTest {
         FavoriteService favoriteService = new FavoriteService(driver);
 
         var add = favoriteService.add(userId, goodfellas);
-        assertEquals(add.get("tmdbId"), goodfellas);
-        assertEquals(add.get("favorite"), true);
+        assertEquals(goodfellas, add.get("tmdbId"));
+        assertTrue((Boolean)add.get("favorite"), "goodfellas is favorite");
 
         var addCheck = favoriteService.all(userId, new Params(null, Params.Sort.title, Params.Order.DESC, 10, 0));
-        var found = addCheck.stream().filter(movie -> movie.get("tmdbId").equals(goodfellas));
-        assertNotNull(found);
-        assertEquals(found.findAny().get().get("tmdbId"), goodfellas);
+        var found = addCheck.stream().allMatch(movie -> movie.get("tmdbId").equals(goodfellas));
+        assertTrue(found, "onyl goodfellas is favorite");
 
         var remove = favoriteService.remove(userId, goodfellas);
-        assertEquals(remove.get("tmdbId"), goodfellas);
-        assertEquals(remove.get("favorite"), false);
+        assertEquals(goodfellas, remove.get("tmdbId"));
+        assertEquals(false, remove.get("favorite"), "goodfellas is not a favorite anymore");
 
         var removeCheck = favoriteService.all(userId, new Params(null, Params.Sort.title, Params.Order.DESC, 10, 0));
-        var notFound = removeCheck.stream().filter(movie -> movie.get("tmdbId").equals(goodfellas));
-        assertTrue(notFound.findAny().isEmpty());
+        assertTrue(removeCheck.isEmpty(), "no favorite movies anymore");
     }
 }
