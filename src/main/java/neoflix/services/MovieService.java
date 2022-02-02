@@ -25,10 +25,10 @@ public class MovieService {
      * parameter and limited to the number passed as `limit`.  The `skip` variable should be
      * used to skip a certain number of rows.
      *
-     * If a userId value is suppled, a `favorite` boolean property should be returned to
+     * If a userId value is supplied, a `favorite` boolean property should be returned to
      * signify whether the user has aded the movie to their "My Favorites" list.
      *
-     * @param params query params
+     * @param params query params (query, sort, order, limit, skip)
      * @param userId
      * @returns {Promise<Record<string, any>[]>}
      */

@@ -39,8 +39,8 @@ class _05_AuthenticationTest {
         authService.register(email, password, name);
 
         var output = authService.authenticate(email, password);
-        assertEquals(output.get("email"), email, "email property");
-        assertEquals(output.get("name"), name, "name property");
+        assertEquals(email, output.get("email"), "email property");
+        assertEquals(name, output.get("name"), "name property");
         assertNotNull(output.get("token"), "token property generated");
         assertNotNull(output.get("userId"), "userId property generated");
         assertNull(output.get("password"), "no password returned");
@@ -56,7 +56,7 @@ class _05_AuthenticationTest {
             authService.authenticate(email, "unknown");
             fail("incorrect password auth should fail");
         } catch (Exception e) {
-            assertEquals(e.getMessage(), "Cannot retrieve a single record, because this result is empty.");
+            assertEquals("Cannot retrieve a single record, because this result is empty.", e.getMessage());
         }
     }
 
@@ -68,7 +68,7 @@ class _05_AuthenticationTest {
             authService.authenticate("unknown", "unknown");
             fail("Auth with unknown username should fail");
         } catch (Exception e) {
-            assertEquals(e.getMessage(), "Cannot retrieve a single record, because this result is empty.");
+            assertEquals("Cannot retrieve a single record, because this result is empty.", e.getMessage());
         }
     }
 

@@ -45,7 +45,7 @@ class _02_MovieListTest {
         var next = movieService.all(new Params(null, Params.Sort.title, ASC, limit, skip), null);
         assertNotNull(next);
         assertEquals(limit, next.size());
-        assertNotEquals(next.get(0).get("title"), firstTitle);
+        assertNotEquals(firstTitle, next.get(0).get("title"));
     }
 
     @Test

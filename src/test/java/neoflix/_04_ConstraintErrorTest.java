@@ -60,8 +60,8 @@ class _04_ConstraintErrorTest {
         AuthService authService = new AuthService(driver, jwtSecret);
         var output = authService.register(email, password, name);
 
-        assertEquals(output.get("email"), email, "email property");
-        assertEquals(output.get("name"), name, "name property");
+        assertEquals(email, output.get("email"), "email property");
+        assertEquals(name, output.get("name"), "name property");
         assertNotNull(output.get("token"), "token property generated");
         assertNotNull(output.get("userId"), "userId property generated");
         assertNull(output.get("password"), "no password returned");
@@ -71,7 +71,7 @@ class _04_ConstraintErrorTest {
             authService.register(email, password, name);
             fail("Retry should fail");
         } catch (Exception e) {
-            assertEquals(e.getMessage(), "An account already exists with the email address");
+            assertEquals("An account already exists with the email address", e.getMessage());
         }
     }
 }

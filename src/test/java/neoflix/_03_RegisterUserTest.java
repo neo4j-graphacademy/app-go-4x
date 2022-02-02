@@ -41,8 +41,8 @@ class _03_RegisterUserTest {
         assertNotNull(output);
         assertEquals(4, output.size(), "4 properties returned");
 
-        assertEquals(output.get("email"), email, "email property");
-        assertEquals(output.get("name"), name, "name property");
+        assertEquals(email, output.get("email"), "email property");
+        assertEquals(name, output.get("name"), "name property");
         assertNotNull(output.get("token"), "token property generated");
         assertNotNull(output.get("userId"), "userId property generated");
         assertNull(output.get("password"), "no password returned");
@@ -55,10 +55,10 @@ class _03_RegisterUserTest {
                             Values.parameters("email", email))
                     .single().get("u").asMap();
 
-                assertEquals(user.get("email"), email, "email property");
-                assertEquals(user.get("name"), name, "name property");
+                assertEquals(email, user.get("email"), "email property");
+                assertEquals(name, user.get("name"), "name property");
                 assertNotNull(user.get("userId"), "userId property generated");
-                assertNotEquals(user.get("password"), password, "password was hashed");
+                assertNotEquals(password, user.get("password"), "password was hashed");
                 return null;
             });
         }

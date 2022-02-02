@@ -9,9 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Values;
 
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class _06_RatingMoviesTest {
     private static Driver driver;
@@ -43,7 +42,7 @@ class _06_RatingMoviesTest {
         var output = ratingService.add(userId, movieId, rating);
 
         assertNotNull(output);
-        assertEquals(output.get("tmdbId"), movieId);
-        assertEquals(Integer.parseInt(output.get("rating").toString()), rating);
+        assertEquals(movieId, output.get("tmdbId"));
+        assertEquals(rating, Integer.parseInt(output.get("rating").toString()));
     }
 }
