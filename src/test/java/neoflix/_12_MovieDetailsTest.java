@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Values;
 
-import static neoflix.Params.Sort.released;
 import static neoflix.Params.Sort.title;
 import static org.junit.jupiter.api.Assertions.*;
 
