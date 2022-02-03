@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Values;
 
+import java.util.Map;
+
 import static neoflix.Params.Sort.timestamp;
 import static neoflix.Params.Sort.title;
 import static org.junit.jupiter.api.Assertions.*;
@@ -17,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class _13_ListingRatingsTest {
     private static Driver driver;
 
-    private static String pulpFiction = "680";
+    private static final String pulpFiction = "680";
 
     @BeforeAll
     static void initDriver() {
@@ -62,6 +64,6 @@ class _13_ListingRatingsTest {
                 What is the name of the first person to rate the movie Pulp Fiction?
                 Copy and paste the following answer into the text box:
                 """);
-        System.out.println(first.get(0).get("user"));
+        System.out.println(((Map)first.get(0).get("user")).get("name"));
     }
 }

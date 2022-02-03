@@ -15,10 +15,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class _07_FavoritesListTest {
     private static Driver driver;
 
-    private static String toyStory = "862";
-    private static String goodfellas = "769";
-    private static String userId = "9f965bf6-7e32-4afb-893f-756f502b2c2a";
-    private static String email = "graphacademy.favorite@neo4j.com";
+    private static final String toyStory = "862";
+    private static final String goodfellas = "769";
+    private static final String userId = "9f965bf6-7e32-4afb-893f-756f502b2c2a";
+    private static final String email = "graphacademy.favorite@neo4j.com";
 
     @BeforeAll
     static void initDriver() {
@@ -50,7 +50,7 @@ class _07_FavoritesListTest {
     }
 
     @BeforeEach
-    void setUp() {
+    void removeFavorites() {
         try (var session = driver.session()) {
             session.writeTransaction(tx ->
                     tx.run("MATCH (u:User {userId: $userId})-[r:HAS_FAVORITE]->(m:Movie) DELETE r",

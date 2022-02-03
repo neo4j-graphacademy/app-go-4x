@@ -17,9 +17,9 @@ class _04_ConstraintErrorTest {
     private static Driver driver;
     private static String jwtSecret;
 
-    private static String email = UUID.randomUUID() +"@neo4j.com";
-    private static String password = UUID.randomUUID().toString();
-    private static String name = "Graph Academy";
+    private static final String email = UUID.randomUUID() +"@neo4j.com";
+    private static final String password = UUID.randomUUID().toString();
+    private static final String name = "Graph Academy";
 
     @BeforeAll
     static void initDriverAuth() {

@@ -16,10 +16,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class _11_MovieListTest {
     private static Driver driver;
 
-    private static String userId = "fe770c6b-4034-4e07-8e40-2f39e7a6722c";
-    private static String email = "graphacademy.movielists@neo4j.com";
-    private static String tomHanks = "31";
-    private static String coppola = "1776";
+    private static final String userId = "fe770c6b-4034-4e07-8e40-2f39e7a6722c";
+    private static final String email = "graphacademy.movielists@neo4j.com";
+    private static final String tomHanks = "31";
+    private static final String coppola = "1776";
 
     @BeforeAll
     static void initDriver() {
@@ -66,10 +66,12 @@ class _11_MovieListTest {
         var output = movieService.getForActor(tomHanks, new Params(null, title, Params.Order.ASC, limit, 0), userId);
         assertNotNull(output);
         assertEquals(limit, output.size());
+        assertEquals("'burbs, The", output.get(0).get("title"));
 
         var secondOutput = movieService.getForActor(tomHanks, new Params(null, title, Params.Order.ASC, limit, limit), userId);
         assertNotNull(secondOutput);
         assertEquals(limit, secondOutput.size());
+        assertEquals("Apollo 13", secondOutput.get(0).get("title"));
 
         assertNotEquals(output.get(0).get("title"), secondOutput.get(0).get("title"));
 
@@ -86,10 +88,12 @@ class _11_MovieListTest {
         var output = movieService.getForDirector(tomHanks, new Params(null, title, Params.Order.ASC, limit, 0), userId);
         assertNotNull(output);
         assertEquals(limit, output.size());
+        assertEquals("Larry Crowne", output.get(0).get("title"));
 
         var secondOutput = movieService.getForDirector(tomHanks, new Params(null, title, Params.Order.ASC, limit, limit), userId);
         assertNotNull(secondOutput);
         assertEquals(limit, secondOutput.size());
+        assertEquals("That Thing You Do!", secondOutput.get(0).get("title"));
 
         assertNotEquals(output.get(0).get("title"), secondOutput.get(0).get("title"));
 
@@ -104,6 +108,8 @@ class _11_MovieListTest {
         var output = movieService.getForDirector(coppola, new Params(null, title, Params.Order.ASC, 30, 0), userId);
         assertNotNull(output);
         assertEquals(16, output.size());
+        assertEquals("Apocalypse Now", output.get(0).get("title"));
+        assertEquals("Tucker: The Man and His Dream", output.get(15).get("title"));
 
         System.out.println("""
                 

@@ -15,9 +15,9 @@ class _05_AuthenticationTest {
     private static Driver driver;
     private static String jwtSecret;
 
-    private static String email = "authenticated@neo4j.com";
-    private static String password = "AuthenticateM3!";
-    private static String name = "Authenticated User";
+    private static final String email = "authenticated@neo4j.com";
+    private static final String password = "AuthenticateM3!";
+    private static final String name = "Authenticated User";
 
     @BeforeAll
     static void initDriverAuth() {

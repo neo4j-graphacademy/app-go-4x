@@ -15,10 +15,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class _06_RatingMoviesTest {
     private static Driver driver;
 
-    private static String email = "graphacademy.reviewer@neo4j.com";
-    private static String movieId = "769";
-    private static String userId = "1185150b-9e81-46a2-a1d3-eb649544b9c4";
-    private static int rating = 5;
+    private static final String email = "graphacademy.reviewer@neo4j.com";
+    private static final String movieId = "769";
+    private static final String userId = "1185150b-9e81-46a2-a1d3-eb649544b9c4";
+    private static final int rating = 5;
 
     @BeforeAll
     static void initDriver() {

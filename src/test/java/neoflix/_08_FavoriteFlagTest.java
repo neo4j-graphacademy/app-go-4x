@@ -18,10 +18,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class _08_FavoriteFlagTest {
     private static Driver driver;
 
-    private static String toyStory = "862";
-    private static String goodfellas = "769";
-    private static String userId = "fe770c6b-4034-4e07-8e40-2f39e7a6722c";
-    private static String email = "graphacademy.flag@neo4j.com";
+    private static final String userId = "fe770c6b-4034-4e07-8e40-2f39e7a6722c";
+    private static final String email = "graphacademy.flag@neo4j.com";
 
     @BeforeAll
     static void initDriver() {
@@ -56,17 +54,19 @@ class _08_FavoriteFlagTest {
         var topMovie = movieService.all(new Params(null, imdbRating, DESC, 1, 0), userId);
 
         // Add top movie to user favorites
-        var add = favoriteService.add(userId, topMovie.get(0).get("tmdbId").toString());
-        assertEquals(topMovie.get(0).get("tmdbId"), add.get("tmdbId"));
+        var topMovieId = topMovie.get(0).get("tmdbId").toString();
+        var add = favoriteService.add(userId, topMovieId);
+        assertEquals(topMovieId, add.get("tmdbId"));
         assertTrue((Boolean)add.get("favorite"), "top movie is favorite");
 
         var addCheck = favoriteService.all(userId, new Params(null, imdbRating, Params.Order.ASC, 999, 0));
-        var found = addCheck.stream().filter(movie -> movie.get("tmdbId").equals(topMovie.get(0).get("tmdbId")));
-        assertNotNull(found);
-        assertEquals(topMovie.get(0).get("tmdbId"), found.findAny().get().get("tmdbId"));
+
+        assertEquals(1, addCheck.size());
+        var found = addCheck.stream().allMatch(movie -> movie.get("tmdbId").equals(topMovieId));
+        assertTrue(found);
 
         var topTwo = movieService.all(new Params(null, imdbRating, DESC, 2, 0), userId);
-        assertEquals(topTwo.get(0).get("tmdbId"), add.get("tmdbId"));
+        assertEquals(topMovieId, topTwo.get(0).get("tmdbId"));
         assertEquals(true, topTwo.get(0).get("favorite"));
         assertEquals(false, topTwo.get(1).get("favorite"));
     }
