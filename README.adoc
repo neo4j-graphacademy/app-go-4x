@@ -1,10 +1,10 @@
-= Building Neo4j Applications with Node.js
+= Building Neo4j Applications with Java
 
-> Learn how to interact with Neo4j from Node.js using the Neo4j JavaScript Driver
+> Learn how to interact with Neo4j from Java using the Neo4j Java Driver
 
-This repository accompanies the link:https://graphacademy.neo4j.com/courses/app-nodejs/[Building Neo4j Applications with Node.js course^] on link:https://graphacademy.neo4j.com/[Neo4j GraphAcademy^].
+This repository accompanies the link:https://graphacademy.neo4j.com/courses/app-java/[Building Neo4j Applications with Java course^] on link:https://graphacademy.neo4j.com/[Neo4j GraphAcademy^].
 
-For a complete walkthrough of this repository,  link:https://graphacademy.neo4j.com/courses/app-nodejs/[enrol now^].
+For a complete walkthrough of this repository,  link:https://graphacademy.neo4j.com/courses/app-java/[enroll now^].
 
 == Setup
 
@@ -36,7 +36,7 @@ SALT_ROUNDS=10
 
 You may spot a number of comments in this repository that look a little like this:
 
-[source,js]
+[source,java]
 ----
 // tag::something[]
 someCode()
@@ -48,9 +48,3 @@ We use link:https://asciidoc-py.github.io/index.html[Asciidoc^] to author our co
 Using these tags means that we can use a macro to include portions of code directly into the course itself.
 
 From the point of view of the course, you can go ahead and ignore them.
-
-== TODO
-
-* records for datatypes and nicer mapping of results
-* user / auth handling
-* tests (unit and integration)
