@@ -2,18 +2,15 @@
 // Outcome: A user will be able to authenticate against their database record
 package neoflix;
 
-import neoflix.services.MovieService;
 import neoflix.services.RatingService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.Values;
 
 import java.util.Map;
 
 import static neoflix.Params.Sort.timestamp;
-import static neoflix.Params.Sort.title;
 import static org.junit.jupiter.api.Assertions.*;
 
 class _13_ListingRatingsTest {
@@ -54,9 +51,9 @@ class _13_ListingRatingsTest {
         var limit = 1;
 
         var first = ratingService.forMovie(pulpFiction, new Params(null, timestamp, Params.Order.ASC, limit, 0));
-        var latest = ratingService.forMovie(pulpFiction, new Params(null, timestamp, Params.Order.DESC, limit, 0));
+        var last = ratingService.forMovie(pulpFiction, new Params(null, timestamp, Params.Order.DESC, limit, 0));
 
-        assertNotEquals(first, latest);
+        assertNotEquals(first, last);
 
         System.out.println("""
                 
