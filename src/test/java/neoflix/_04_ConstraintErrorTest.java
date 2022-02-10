@@ -31,8 +31,10 @@ class _04_ConstraintErrorTest {
 
     @AfterAll
     static void closeDriver() {
-        driver.session().writeTransaction(tx -> tx.run("MATCH (u:User {email: $email}) DETACH DELETE u", Values.parameters("email", email)));
-        driver.close();
+        if (driver != null) {
+            driver.session().writeTransaction(tx -> tx.run("MATCH (u:User {email: $email}) DETACH DELETE u", Values.parameters("email", email)));
+            driver.close();
+        }
     }
 
     /*

@@ -1,6 +1,5 @@
 package neoflix;
 
-import com.google.gson.Gson;
 import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
@@ -57,10 +56,21 @@ public class AppUtils {
 
     public static List<Map<String,Object>> loadFixtureList(final String name) {
         var fixture = new InputStreamReader(AppUtils.class.getResourceAsStream("/fixtures/" + name + ".json"));
-        return new Gson().fromJson(fixture,List.class);
+        return GsonUtils.gson().fromJson(fixture,List.class);
     }
+    public static List<Map<String, Object>> process(List<Map<String, Object>> result, Params params) {
+        return params == null ? result : result.stream()
+                .sorted((m1, m2) ->
+                        (params.order() == Params.Order.ASC ? 1 : -1) *
+                                ((Comparable)m1.getOrDefault(params.sort().name(),"")).compareTo(
+                                        m2.getOrDefault(params.sort().name(),"")
+                                ))
+                .skip(params.skip()).limit(params.limit())
+                .toList();
+    }
+
     public static Map<String,Object> loadFixtureSingle(final String name) {
         var fixture = new InputStreamReader(AppUtils.class.getResourceAsStream("/fixtures/" + name + ".json"));
-        return new Gson().fromJson(fixture,Map.class);
+        return GsonUtils.gson().fromJson(fixture,Map.class);
     }
 }

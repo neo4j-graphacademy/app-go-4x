@@ -5,10 +5,7 @@ package neoflix;
 import neoflix.services.AuthService;
 import neoflix.services.FavoriteService;
 import neoflix.services.MovieService;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Values;
 
@@ -71,6 +68,8 @@ class _08_FavoriteFlagTest {
 
         var topTwo = movieService.all(new Params(null, imdbRating, DESC, 2, 0), userId);
         assertEquals(topMovieId, topTwo.get(0).get("tmdbId"));
+
+        Assumptions.assumeTrue(topTwo.get(0).get("favorite") != null);
         assertEquals(true, topTwo.get(0).get("favorite"));
         assertEquals(false, topTwo.get(1).get("favorite"));
     }

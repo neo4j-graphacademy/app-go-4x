@@ -41,7 +41,7 @@ class _11_MovieListTest {
         MovieService movieService = new MovieService(driver);
 
         var genreName = "Comedy";
-        var limit = 10;
+        var limit = 3;
 
         var output = movieService.byGenre(genreName, new Params(null, title, Params.Order.ASC, limit, 0), userId);
         assertNotNull(output);
@@ -85,19 +85,19 @@ class _11_MovieListTest {
 
         var limit = 1;
 
-        var output = movieService.getForDirector(tomHanks, new Params(null, title, Params.Order.ASC, limit, 0), userId);
+        var output = movieService.getForDirector(coppola, new Params(null, title, Params.Order.ASC, limit, 0), userId);
         assertNotNull(output);
         assertEquals(limit, output.size());
-        assertEquals("Larry Crowne", output.get(0).get("title"));
+        assertEquals("Apocalypse Now", output.get(0).get("title"));
 
-        var secondOutput = movieService.getForDirector(tomHanks, new Params(null, title, Params.Order.ASC, limit, limit), userId);
+        var secondOutput = movieService.getForDirector(coppola, new Params(null, title, Params.Order.ASC, limit, limit), userId);
         assertNotNull(secondOutput);
         assertEquals(limit, secondOutput.size());
-        assertEquals("That Thing You Do!", secondOutput.get(0).get("title"));
+        assertEquals("Conversation, The", secondOutput.get(0).get("title"));
 
         assertNotEquals(output.get(0).get("title"), secondOutput.get(0).get("title"));
 
-        var reordered = movieService.getForDirector(tomHanks, new Params(null, title, Params.Order.DESC, limit, 0), userId);
+        var reordered = movieService.getForDirector(coppola, new Params(null, title, Params.Order.DESC, limit, 0), userId);
         assertNotEquals(output.get(0).get("title"), reordered.get(0).get("title"));
     }
 

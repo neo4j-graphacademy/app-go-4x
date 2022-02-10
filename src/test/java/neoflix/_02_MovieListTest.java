@@ -48,6 +48,27 @@ class _02_MovieListTest {
     }
 
     @Test
+    void testSorting() {
+        MovieService movieService = new MovieService(driver);
+        var limit = 1;
+        var byReleased = movieService.all(new Params(null, released, DESC, limit, 0), null);
+        assertNotNull(byReleased);
+        assertEquals(limit, byReleased.size());
+        assertNotNull(byReleased.get(0));
+        var releaseDate = byReleased.get(0).get("released");
+        assertNotNull(releaseDate);
+        assertEquals("2016-09-02", releaseDate);
+
+        var byRating = movieService.all(new Params(null, Params.Sort.imdbRating, DESC, limit, 0), null);
+        assertNotNull(byRating);
+        assertEquals(limit, byRating.size());
+        assertNotNull(byRating.get(0));
+        var rating = byRating.get(0).get("imdbRating");
+        assertNotNull(rating);
+        assertEquals(9.6, rating);
+    }
+
+    @Test
     void orderMoviesByRating() {
         var movieService = new MovieService(driver);
         var limit = 1;

@@ -8,12 +8,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class GsonUtils {
-    public static Gson gson() throws ClassNotFoundException {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(LocalDate.class, new LocalDateSerializer());
-        Class type = Class.forName("java.util.Collections$EmptyList");
-        gsonBuilder.registerTypeAdapter(type, new EmptyListSerializer());
-        return gsonBuilder.create();
+    public static Gson gson() {
+        try {
+            Class type = Class.forName("java.util.Collections$EmptyList");
+            GsonBuilder gsonBuilder = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateSerializer())
+            .setNumberToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+            .registerTypeAdapter(type, new EmptyListSerializer());
+            return gsonBuilder.create();
+        } catch(ClassNotFoundException cnfe) {
+            throw new RuntimeException(cnfe);
+        }
     }
 
     static class LocalDateSerializer implements JsonSerializer<LocalDate> {

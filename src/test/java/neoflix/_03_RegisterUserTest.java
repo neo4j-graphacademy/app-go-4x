@@ -16,7 +16,7 @@ class _03_RegisterUserTest {
     private static Driver driver;
     private static String jwtSecret;
 
-    private static final String email = "graphacademy@neo4j.com";
+    private static final String email = "graphacademy.register@neo4j.com";
     private static final String password = "letmein";
     private static final String name = "Graph Academy";
 

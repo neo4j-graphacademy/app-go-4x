@@ -11,7 +11,7 @@ public record Params(String query, Sort sort, Order order, int limit, int skip) 
         return sort == null ? defaultSort : sort;
     }
 
-    enum Order {
+    public enum Order {
         ASC, DESC;
 
         static Order of(String value) {
@@ -43,7 +43,7 @@ public record Params(String query, Sort sort, Order order, int limit, int skip) 
         int skip = Integer.parseInt(req.queryParamOrDefault("skip", "0"));
         // Only accept valid sort fields
         if (!validSort.contains(sort)) {
-            sort = null;
+            sort = validSort.iterator().next();
         }
         return new Params(q, sort, order, limit, skip);
     }
