@@ -55,7 +55,7 @@ class _14_PersonListTest {
         assertEquals(1, first.size());
         assertEquals(" Aaron Woodley", first.get(0).get("name"));
         assertNotEquals(first, last);
-        assertEquals("Zoey Vargas", last.get(0).get("name"));
+        assertEquals("Álex Angulo", last.get(0).get("name"));
     }
 
     @Test
