@@ -2,6 +2,7 @@
 // Outcome: A user will be able to authenticate against their database record
 package neoflix;
 
+import neoflix.services.AuthService;
 import neoflix.services.FavoriteService;
 import neoflix.services.MovieService;
 import org.junit.jupiter.api.AfterAll;
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Values;
 
+import java.util.Map;
+
 import static neoflix.Params.Order.DESC;
 import static neoflix.Params.Sort.imdbRating;
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,27 +21,28 @@ import static org.junit.jupiter.api.Assertions.*;
 class _08_FavoriteFlagTest {
     private static Driver driver;
 
-    private static final String userId = "fe770c6b-4034-4e07-8e40-2f39e7a6722c";
+    private static String userId;
     private static final String email = "graphacademy.flag@neo4j.com";
 
     @BeforeAll
     static void initDriver() {
         AppUtils.loadProperties();
         driver = AppUtils.initDriver();
-
-        driver.session().writeTransaction(tx -> tx.run("""
+        var user = new AuthService(driver, AppUtils.getJwtSecret()).register(email, "letmein", email);
+        userId = (String)user.get("userId");
+        if (driver != null) driver.session().writeTransaction(tx -> tx.run("""
                 MERGE (u:User {userId: $userId}) SET u.email = $email
                 """, Values.parameters("userId", userId, "email", email)));
     }
 
     @AfterAll
     static void closeDriver() {
-        driver.close();
+        if (driver != null) driver.close();
     }
 
     @BeforeEach
     void setUp() {
-        try (var session = driver.session()) {
+        if (driver != null) try (var session = driver.session()) {
             session.writeTransaction(tx ->
                     tx.run("MATCH (u:User {userId: $userId})-[r:HAS_FAVORITE]->(m:Movie) DELETE r",
                             Values.parameters("userId", userId)));

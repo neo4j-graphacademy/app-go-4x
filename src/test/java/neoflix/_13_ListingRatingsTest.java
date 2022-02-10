@@ -26,14 +26,14 @@ class _13_ListingRatingsTest {
 
     @AfterAll
     static void closeDriver() {
-        driver.close();
+        if (driver != null) driver.close();
     }
 
     @Test
     void getListOfRatings() {
         RatingService ratingService = new RatingService(driver);
 
-        var limit = 10;
+        var limit = 2;
 
         var output = ratingService.forMovie(pulpFiction, new Params(null, timestamp, Params.Order.DESC, limit, 0));
         var paginated = ratingService.forMovie(pulpFiction, new Params(null, timestamp, Params.Order.DESC, limit, limit));

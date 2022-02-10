@@ -22,7 +22,7 @@ class _10_GenreDetailsTest {
 
     @AfterAll
     static void closeDriver() {
-        driver.close();
+        if (driver != null) driver.close();
     }
 
     @Test

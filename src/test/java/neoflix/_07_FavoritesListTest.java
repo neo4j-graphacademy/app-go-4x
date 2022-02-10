@@ -15,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class _07_FavoritesListTest {
     private static Driver driver;
 
-    private static final String toyStory = "862";
     private static final String goodfellas = "769";
     private static final String userId = "9f965bf6-7e32-4afb-893f-756f502b2c2a";
     private static final String email = "graphacademy.favorite@neo4j.com";
@@ -24,17 +23,18 @@ class _07_FavoritesListTest {
     static void initDriver() {
         AppUtils.loadProperties();
         driver = AppUtils.initDriver();
-
-        try (var session = driver.session()) {
-            session.writeTransaction(tx -> tx.run("""
-                    MERGE (u:User {userId: $userId}) SET u.email = $email
-                    """, Values.parameters("userId", userId, "email", email)));
+        if (driver != null) {
+            try (var session = driver.session()) {
+                session.writeTransaction(tx -> tx.run("""
+                        MERGE (u:User {userId: $userId}) SET u.email = $email
+                        """, Values.parameters("userId", userId, "email", email)));
+            }
         }
     }
 
     @AfterAll
     static void closeDriver() {
-        driver.close();
+        if (driver!=null) driver.close();
     }
 
     @Test
@@ -51,27 +51,28 @@ class _07_FavoritesListTest {
 
     @BeforeEach
     void removeFavorites() {
-        try (var session = driver.session()) {
+        if (driver != null)
+            try (var session = driver.session()) {
             session.writeTransaction(tx ->
                     tx.run("MATCH (u:User {userId: $userId})-[r:HAS_FAVORITE]->(m:Movie) DELETE r",
                             Values.parameters("userId", userId)));
-        }
+            }
     }
 
     @Test
     void saveMovieToUserFavorites() {
         FavoriteService favoriteService = new FavoriteService(driver);
 
-        var output = favoriteService.add(userId, toyStory);
+        var output = favoriteService.add(userId, goodfellas);
 
         assertNotNull(output);
-        assertEquals(toyStory, output.get("tmdbId"));
-        assertTrue((Boolean)output.get("favorite"), "toy story is favorite");
+        assertEquals(goodfellas, output.get("tmdbId"));
+        assertTrue((Boolean)output.get("favorite"), "goodfellas is favorite");
 
         var favorites = favoriteService.all(userId, new Params(null, Params.Sort.title, Params.Order.DESC, 10, 0));
 
-        var movieFavorite = favorites.stream().allMatch(movie -> movie.get("tmdbId").equals(toyStory));
-        assertTrue(movieFavorite, "only toy story is favorite movie");
+        var movieFavorite = favorites.stream().anyMatch(movie -> movie.get("tmdbId").equals(goodfellas));
+        assertTrue(movieFavorite, "goodfellas is a favorite movie");
     }
 
     @Test
@@ -83,14 +84,15 @@ class _07_FavoritesListTest {
         assertTrue((Boolean)add.get("favorite"), "goodfellas is favorite");
 
         var addCheck = favoriteService.all(userId, new Params(null, Params.Sort.title, Params.Order.DESC, 10, 0));
-        var found = addCheck.stream().allMatch(movie -> movie.get("tmdbId").equals(goodfellas));
-        assertTrue(found, "onyl goodfellas is favorite");
+        var found = addCheck.stream().anyMatch(movie -> movie.get("tmdbId").equals(goodfellas));
+        assertTrue(found, "goodfellas is a favorite");
 
         var remove = favoriteService.remove(userId, goodfellas);
         assertEquals(goodfellas, remove.get("tmdbId"));
         assertEquals(false, remove.get("favorite"), "goodfellas is not a favorite anymore");
 
         var removeCheck = favoriteService.all(userId, new Params(null, Params.Sort.title, Params.Order.DESC, 10, 0));
-        assertTrue(removeCheck.isEmpty(), "no favorite movies anymore");
+        var notFound = removeCheck.stream().anyMatch(movie -> movie.get("tmdbId").equals(goodfellas));
+        assertFalse(notFound, "goodfellas is not a favorite anymore");
     }
 }

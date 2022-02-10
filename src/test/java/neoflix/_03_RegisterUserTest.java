@@ -26,12 +26,12 @@ class _03_RegisterUserTest {
         driver = AppUtils.initDriver();
         jwtSecret = AppUtils.getJwtSecret();
 
-        driver.session().writeTransaction(tx -> tx.run("MATCH (u:User {email: $email}) DETACH DELETE u", Values.parameters("email", email)));
+        if (driver != null) driver.session().writeTransaction(tx -> tx.run("MATCH (u:User {email: $email}) DETACH DELETE u", Values.parameters("email", email)));
     }
 
     @AfterAll
     static void closeDriver() {
-        driver.close();
+        if (driver != null) driver.close();
     }
 
     @Test
@@ -48,7 +48,7 @@ class _03_RegisterUserTest {
         assertNull(output.get("password"), "no password returned");
 
         // Expect user exists in database
-        try (var session = driver.session()) {
+        if (driver != null) try (var session = driver.session()) {
             session.readTransaction(tx -> {
                     var user = tx.run(
                             "MATCH (u:User {email: $email}) RETURN u",

@@ -24,7 +24,7 @@ class _09_GenreListTest {
 
     @AfterAll
     static void closeDriver() {
-        driver.close();
+        if (driver != null) driver.close();
     }
 
     @Test

@@ -25,12 +25,12 @@ class _05_AuthenticationTest {
         driver = AppUtils.initDriver();
         jwtSecret = AppUtils.getJwtSecret();
 
-        driver.session().writeTransaction(tx -> tx.run("MATCH (u:User {email: $email}) DETACH DELETE u", Values.parameters("email", email)));
+        if (driver != null) driver.session().writeTransaction(tx -> tx.run("MATCH (u:User {email: $email}) DETACH DELETE u", Values.parameters("email", email)));
     }
 
     @AfterAll
     static void closeDriver() {
-        driver.close();
+        if (driver != null) driver.close();
     }
 
     @Test
@@ -73,7 +73,7 @@ class _05_AuthenticationTest {
     }
 
     void setUserAuthTestTimestamp() {
-        try (var session = driver.session()) {
+        if (driver != null) try (var session = driver.session()) {
             session.writeTransaction(tx -> {
                 tx.run("""
                         MATCH (u:User {email: $email})

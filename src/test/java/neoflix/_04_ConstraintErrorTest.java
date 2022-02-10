@@ -4,6 +4,7 @@ package neoflix;
 
 import neoflix.services.AuthService;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
@@ -40,6 +41,7 @@ class _04_ConstraintErrorTest {
      */
     @Test
     void findUniqueConstraint() {
+        Assumptions.assumeTrue(driver != null);
         try (var session = driver.session()) {
             session.readTransaction(tx -> {
                 var constraint = tx.run("""

@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class _15_PersonProfileTest {
     private static Driver driver;
 
-    private static String coppola = "1776";
+    private static final String coppola = "1776";
 
     @BeforeAll
     static void initDriver() {
@@ -24,7 +24,7 @@ class _15_PersonProfileTest {
 
     @AfterAll
     static void closeDriver() {
-        driver.close();
+        if (driver != null) driver.close();
     }
 
     @Test

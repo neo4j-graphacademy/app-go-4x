@@ -26,14 +26,14 @@ class _11_MovieListTest {
         AppUtils.loadProperties();
         driver = AppUtils.initDriver();
 
-        driver.session().writeTransaction(tx -> tx.run("""
+        if (driver != null) driver.session().writeTransaction(tx -> tx.run("""
                 MERGE (u:User {userId: $userId}) SET u.email = $email
                 """, Values.parameters("userId", userId, "email", email)));
     }
 
     @AfterAll
     static void closeDriver() {
-        driver.close();
+        if (driver != null) driver.close();
     }
 
     @Test

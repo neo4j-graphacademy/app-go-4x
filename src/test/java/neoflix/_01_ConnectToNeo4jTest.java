@@ -1,5 +1,6 @@
 package neoflix;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 
@@ -16,6 +17,7 @@ class _01_ConnectToNeo4jTest {
         assertNotNull(System.getProperty("NEO4J_PASSWORD"), "password defined");
 
         Driver driver = AppUtils.initDriver();
+        Assumptions.assumeTrue(driver != null);
         assertNotNull(driver, "driver instantiated");
         assertDoesNotThrow(driver::verifyConnectivity,"unable to verify connectivity");
     }

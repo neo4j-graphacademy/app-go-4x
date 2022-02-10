@@ -22,14 +22,14 @@ class _14_PersonListTest {
 
     @AfterAll
     static void closeDriver() {
-        driver.close();
+        if (driver != null) driver.close();
     }
 
     @Test
     void getPaginatedPersonList() {
         PeopleService peopleService = new PeopleService(driver);
 
-        var limit = 10;
+        var limit = 3;
 
         var output = peopleService.all(new Params(null, name, Params.Order.ASC, limit, 0));
         assertNotNull(output);
@@ -40,7 +40,7 @@ class _14_PersonListTest {
         assertNotNull(paginated);
         assertEquals(limit, paginated.size());
         assertNotEquals(output, paginated);
-        assertEquals(" Andrew R. Jones", paginated.get(0).get("name"));
+        assertEquals(" Alejandro González Iñárritu", paginated.get(0).get("name"));
     }
 
     @Test
@@ -55,7 +55,7 @@ class _14_PersonListTest {
         assertEquals(1, first.size());
         assertEquals(" Aaron Woodley", first.get(0).get("name"));
         assertNotEquals(first, last);
-        assertEquals("Álex Angulo", last.get(0).get("name"));
+        assertEquals("Zoey Vargas", last.get(0).get("name"));
     }
 
     @Test
