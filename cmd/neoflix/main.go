@@ -30,7 +30,10 @@ func main() {
 	ioutils.PanicOnError(err)
 
 	server := NewHttpServer()
-	genreRoutes := routes.NewGenreRoutes(services.NewGenreService(driver))
+	genreRoutes := routes.NewGenreRoutes(
+		services.NewGenreService(driver),
+		services.NewMovieService(driver),
+	)
 	genreRoutes.AddRoutes(server)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), server); err != nil {
 		ioutils.PanicOnError(err)
