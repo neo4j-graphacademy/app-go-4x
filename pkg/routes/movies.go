@@ -36,7 +36,6 @@ func (m *movieRoutes) AddRoutes(server *http.ServeMux) {
 			default:
 				m.FindOneMovieById(path, writer)
 			}
-
 		})
 }
 

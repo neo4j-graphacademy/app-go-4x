@@ -50,9 +50,13 @@ func main() {
 		services.NewPeopleService(driver),
 		movieService,
 	)
+	authRoutes := routes.NewAuthRoutes(
+		services.NewNeo4jAuthService(driver, config.JwtSecret),
+	)
 	genreRoutes.AddRoutes(server)
 	movieRoutes.AddRoutes(server)
 	peopleRoutes.AddRoutes(server)
+	authRoutes.AddRoutes(server)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), server); err != nil {
 		ioutils.PanicOnError(err)
 	}
