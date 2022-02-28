@@ -37,7 +37,8 @@ func newSortableAttributes(values []string) *SortableAttributes {
 }
 
 func (sa *SortableAttributes) contains(s string) bool {
-	return sort.SearchStrings(sa.values, s) < len(sa.values)
+	i := sort.SearchStrings(sa.values, s)
+	return i < len(sa.values) && sa.values[i] == s
 }
 
 type Paging struct {
