@@ -26,7 +26,8 @@ func (g *genreRoutes) AddRoutes(server *http.ServeMux) {
 				g.FindAllGenres(writer)
 			case strings.HasSuffix(path, "/movies"):
 				genre := strings.TrimSuffix(path, "/movies")
-				g.FindAllMoviesByGenre(genre, paging.ParsePaging(request), writer)
+				pagingParams := paging.ParsePaging(request, paging.MovieSortableAttributes())
+				g.FindAllMoviesByGenre(genre, pagingParams, writer)
 			default:
 				g.FindOneGenreByName(path, writer)
 			}
