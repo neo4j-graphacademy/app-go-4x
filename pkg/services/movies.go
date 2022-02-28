@@ -17,6 +17,10 @@ type MovieService interface {
 	FindAllByActorId(actorId string, userId string, page *paging.Paging) ([]Movie, error)
 
 	FindAllByDirectorId(actorId string, userId string, page *paging.Paging) ([]Movie, error)
+
+	FindOneById(id string, userId string) (Movie, error)
+
+	FindAllBySimilarity(id string, userId string, page *paging.Paging) ([]Movie, error)
 }
 
 type neo4jMovieService struct {
@@ -301,6 +305,147 @@ func (gs *neo4jMovieService) FindAllByDirectorId(actorId string, userId string, 
 }
 
 // end::getForDirector[]
+
+// FindOneById finds a Movie node with the ID passed as the `id` parameter.
+// Along with the returned payload, a list of actors, directors, and genres should
+// be included.
+// The number of incoming RATED relationships should also be returned as `ratingCount`
+//
+// If a userId value is suppled, a `favorite` boolean property should be returned to
+// signify whether the user has aded the movie to their "My Favorites" list.
+// tag::findById[]
+func (gs *neo4jMovieService) FindOneById(id string, userId string) (movie Movie, err error) {
+	// Find a movie by its ID
+	// MATCH (m:Movie {tmdbId: $id})
+
+	// Open a new session
+	session := gs.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
+
+	// Execute a query in a new Read Transaction
+	result, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		// Get an array of IDs for the User's favorite movies
+		favorites, err := getUserFavorites(tx, userId)
+		if err != nil {
+			return nil, err
+		}
+
+		// Find a movie by its ID
+		result, err := tx.Run(`
+			MATCH (m:Movie {tmdbId: $id})
+			RETURN m {
+			  .*,
+				actors: [ (a)-[r:ACTED_IN]->(m) | a { .*, role: r.role } ],
+				directors: [ (d)-[:DIRECTED]->(m) | d { .* } ],
+				genres: [ (m)-[:IN_GENRE]->(g) | g { .name }],
+				ratingCount: size((m)<-[:RATED]-()),
+				favorite: m.tmdbId IN $favorites
+			} AS movie
+			LIMIT 1`, map[string]interface{}{
+			"id":        id,
+			"favorites": favorites,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		record, err := result.Single()
+		if err != nil {
+			return nil, err
+		}
+		movie, _ := record.Get("movie")
+		return movie, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	movie = result.(Movie)
+	return movie, nil
+}
+
+// end::findById[]
+
+// FindAllBySimilarity should return a paginated list of similar movies to the Movie with the
+// id supplied.  This similarity is calculated by finding movies that have many first
+// degree connections in common: Actors, Directors and Genres.
+//
+// Results should be ordered by the `sort` parameter, and in the direction specified
+// in the `order` parameter.
+// Results should be limited to the number passed as `limit`.
+// The `skip` variable should be used to skip a certain number of rows.
+//
+// If a userId value is supplied, a `favorite` boolean property should be returned to
+// signify whether the user has added the movie to their "My Favorites" list.
+// tag::getSimilarMovies[]
+func (gs *neo4jMovieService) FindAllBySimilarity(id string, userId string, page *paging.Paging) (movies []Movie, err error) {
+	// Get similar movies based on genres or ratings
+	// MATCH (:Movie {tmdbId: $id})-[:IN_GENRE|ACTED_IN|DIRECTED]->()<-[:IN_GENRE|ACTED_IN|DIRECTED]-(m)
+
+	// Open an Session
+	session := gs.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
+
+	// Execute a query in a new Read Transaction
+	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		// Get an array of IDs for the User's favorite movies
+		favorites, err := getUserFavorites(tx, userId)
+		if err != nil {
+			return nil, err
+		}
+
+		// Get similar movies based on genres or ratings
+		result, err := tx.Run(`
+			MATCH (:Movie {tmdbId: $id})-[:IN_GENRE|ACTED_IN|DIRECTED]->()<-[:IN_GENRE|ACTED_IN|DIRECTED]-(m)
+			WHERE m.imdbRating IS NOT NULL
+			
+			WITH m, count(*) AS inCommon
+			WITH m, inCommon, m.imdbRating * inCommon AS score
+			ORDER BY score DESC
+			
+			SKIP $skip
+			LIMIT $limit
+			
+			RETURN m {
+				.*,
+				score: score,
+				favorite: m.tmdbId IN $favorites
+			} AS movie
+`, map[string]interface{}{
+			"id":        id,
+			"favorites": favorites,
+			"skip":      page.Skip(),
+			"limit":     page.Limit(),
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// Get a list of Movies from the Result
+		records, err := result.Collect()
+		if err != nil {
+			return nil, err
+		}
+		var results []map[string]interface{}
+		for _, record := range records {
+			movie, _ := record.Get("movie")
+			results = append(results, movie.(map[string]interface{}))
+		}
+		return results, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	movies = results.([]Movie)
+	return movies, nil
+}
+
+// end::getSimilarMovies[]
 
 // getUserFavorites should return a list of tmdbId properties for the movies that
 // the user has added to their 'My Favorites' list.

@@ -39,9 +39,13 @@ func main() {
 
 	movieService := services.NewMovieService(driver)
 	genreRoutes := routes.NewGenreRoutes(
-		services.NewGenreService(driver), movieService,
+		services.NewGenreService(driver),
+		movieService,
 	)
-	movieRoutes := routes.NewMovieRoutes(movieService)
+	movieRoutes := routes.NewMovieRoutes(
+		movieService,
+		services.NewRatingService(driver),
+	)
 	peopleRoutes := routes.NewPeopleRoutes(
 		services.NewPeopleService(driver),
 		movieService,
