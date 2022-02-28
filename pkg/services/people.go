@@ -10,7 +10,7 @@ import (
 type Person = map[string]interface{}
 
 type PeopleService interface {
-	FindAll(page *paging.Paging) ([]Movie, error)
+	FindAll(page *paging.Paging) ([]Person, error)
 }
 
 type neo4jPeopleService struct {
