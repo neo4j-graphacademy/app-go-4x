@@ -25,9 +25,15 @@ func main() {
 	config, err := readConfig()
 	ioutils.PanicOnError(err)
 	// tag::driver[]
-	driver, err := neo4j.NewDriver(config.Uri, neo4j.BasicAuth(config.Username, config.Password, ""))
+	driver, err := neo4j.NewDriver(
+		config.Uri,
+		neo4j.BasicAuth(config.Username, config.Password, ""),
+	)
 	// end::driver[]
 	ioutils.PanicOnError(err)
+	defer func() {
+		ioutils.PanicOnError(driver.Close())
+	}()
 
 	server := NewHttpServer()
 	genreRoutes := routes.NewGenreRoutes(
