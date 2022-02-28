@@ -36,11 +36,14 @@ func main() {
 	}()
 
 	server := NewHttpServer()
+
+	movieService := services.NewMovieService(driver)
 	genreRoutes := routes.NewGenreRoutes(
-		services.NewGenreService(driver),
-		services.NewMovieService(driver),
+		services.NewGenreService(driver), movieService,
 	)
+	movieRoutes := routes.NewMovieRoutes(movieService)
 	genreRoutes.AddRoutes(server)
+	movieRoutes.AddRoutes(server)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), server); err != nil {
 		ioutils.PanicOnError(err)
 	}

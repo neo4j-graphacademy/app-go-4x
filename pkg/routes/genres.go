@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/json"
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
 	"github.com/neo4j-graphacademy/neoflix/pkg/services"
 	"net/http"
@@ -36,33 +35,16 @@ func (g *genreRoutes) AddRoutes(server *http.ServeMux) {
 
 func (g *genreRoutes) FindAllGenres(writer http.ResponseWriter) {
 	genres, err := g.genres.FindAll()
-	handleResponse(writer, genres, err)
+	serializeJson(writer, genres, err)
 }
 
 func (g *genreRoutes) FindAllMoviesByGenre(genre string, page *paging.Paging, writer http.ResponseWriter) {
 	// TODO: extract userId
 	movies, err := g.movies.FindAllByGenre(genre, "", page)
-	handleResponse(writer, movies, err)
+	serializeJson(writer, movies, err)
 }
 
 func (g *genreRoutes) FindOneGenreByName(name string, writer http.ResponseWriter) {
 	genre, err := g.genres.FindOneByName(name)
-	handleResponse(writer, genre, err)
-}
-
-func handleResponse(writer http.ResponseWriter, result interface{}, err error) {
-	if err != nil {
-		writer.WriteHeader(500)
-		_, _ = writer.Write([]byte(err.Error()))
-		return
-	}
-	genreJson, err := json.Marshal(result)
-	if err != nil {
-		writer.WriteHeader(500)
-		_, _ = writer.Write([]byte(err.Error()))
-		return
-	}
-	writer.Header().Add("Content-Type", "application/json")
-	writer.WriteHeader(200)
-	_, _ = writer.Write(genreJson)
+	serializeJson(writer, genre, err)
 }

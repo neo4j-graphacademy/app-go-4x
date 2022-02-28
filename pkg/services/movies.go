@@ -10,6 +10,8 @@ import (
 type Movie = map[string]interface{}
 
 type MovieService interface {
+	FindAll(userId string, page *paging.Paging) ([]Movie, error)
+
 	FindAllByGenre(genre, userId string, page *paging.Paging) ([]Movie, error)
 }
 
@@ -20,6 +22,75 @@ type neo4jMovieService struct {
 func NewMovieService(driver neo4j.Driver) MovieService {
 	return &neo4jMovieService{driver: driver}
 }
+
+// FindAll should return a paginated list of movies ordered by the `sort`
+// parameter and limited to the number passed as `limit`.  The `skip` variable should be
+// used to skip a certain number of rows.
+//
+// If a userId value is supplied, a `favorite` boolean property should be returned to
+// signify whether the user has aded the movie to their "My Favorites" list.
+// tag::all[]
+func (gs *neo4jMovieService) FindAll(userId string, page *paging.Paging) (movies []Movie, err error) {
+	session := gs.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
+	// tag::allcypher[]
+	// Execute a query in a new Read Transaction
+
+	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		// Get an array of IDs for the User's favorite movies
+		favorites, err := getUserFavorites(tx, userId)
+		if err != nil {
+			return nil, err
+		}
+		// Retrieve a list of movies with the
+		// favorite flag appended to the movie's properties
+		sort := page.Sort()
+		result, err := tx.Run(fmt.Sprintf(`
+		MATCH (m:Movie)
+		WHERE m.`+"`%[1]s`"+` IS NOT NULL
+		RETURN m {
+			.*,
+			favorite: m.tmdbId IN $favorites
+		} AS movie
+		ORDER BY m.`+"`%[1]s`"+` %s
+		SKIP $skip
+		LIMIT $limit
+		`, sort, page.Order()), map[string]interface{}{
+			"favorites": favorites,
+			"skip":      page.Skip(),
+			"limit":     page.Limit(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		// tag::allmovies[]
+		// Get a list of Movies from the Result
+		records, err := result.Collect()
+		if err != nil {
+			return nil, err
+		}
+		var results []map[string]interface{}
+		for _, record := range records {
+			movie, _ := record.Get("movie")
+			results = append(results, movie.(map[string]interface{}))
+		}
+		return results, nil
+		// end::allmovies[]
+	})
+	// end::allcypher[]
+
+	if err != nil {
+		return nil, err
+	}
+	movies = results.([]Movie)
+	// tag::return[]
+	return movies, nil
+	// end::return[]
+}
+
+// end::all[]
 
 // FindAllByGenre should return a paginated list of movies that have a relationship to the
 // supplied Genre.
@@ -46,12 +117,12 @@ func (gs *neo4jMovieService) FindAllByGenre(genre string, userId string, page *p
 		}
 		result, err := tx.Run(fmt.Sprintf(`
 		MATCH (m:Movie)-[:IN_GENRE]->(:Genre {name: $name})
-		WHERE m.%[1]s IS NOT NULL
+		WHERE m.`+"`%[1]s`"+` IS NOT NULL
 		RETURN m {
 			.*,
 			  favorite: m.tmdbId IN $favorites
 		} AS movie
-		ORDER BY m.%[1]s %s
+		ORDER BY m.`+"`%[1]s`"+` %s
 		SKIP $skip
 		LIMIT $limit`, page.Sort(), page.Order()), map[string]interface{}{
 			"name":      genre,

@@ -43,7 +43,7 @@ public class MovieService {
                 var favorites =  getUserFavorites(tx, userId);
 
                 // Retrieve a list of movies with the
-                // favorite flag appened to the movie's properties
+                // favorite flag appended to the movie's properties
                 Params.Sort sort = params.sort(Params.Sort.title);
                 String query = String.format("""
                     MATCH (m:Movie)
