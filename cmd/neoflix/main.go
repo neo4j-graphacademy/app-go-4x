@@ -16,9 +16,9 @@ type Config struct {
 	Username string `json:"NEO4J_USERNAME"`
 	Password string `json:"NEO4J_PASSWORD"`
 
-	Port      int    `json:"APP_PORT"`
-	JwtSecret string `json:"JWT_SECRET"`
-	SaltRound int    `json:"SALT_ROUNDS"`
+	Port       int    `json:"APP_PORT"`
+	JwtSecret  string `json:"JWT_SECRET"`
+	SaltRounds int    `json:"SALT_ROUNDS"`
 }
 
 func main() {
@@ -51,7 +51,11 @@ func main() {
 		movieService,
 	)
 	authRoutes := routes.NewAuthRoutes(
-		services.NewNeo4jAuthService(driver, config.JwtSecret),
+		services.NewNeo4jAuthService(
+			driver,
+			config.JwtSecret,
+			config.SaltRounds,
+		),
 	)
 	genreRoutes.AddRoutes(server)
 	movieRoutes.AddRoutes(server)

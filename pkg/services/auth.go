@@ -17,14 +17,16 @@ type AuthService interface {
 }
 
 type neo4jAuthService struct {
-	driver    neo4j.Driver
-	jwtSecret string
+	driver     neo4j.Driver
+	jwtSecret  string
+	saltRounds int
 }
 
-func NewNeo4jAuthService(driver neo4j.Driver, jwtSecret string) AuthService {
+func NewNeo4jAuthService(driver neo4j.Driver, jwtSecret string, saltRounds int) AuthService {
 	return &neo4jAuthService{
-		driver:    driver,
-		jwtSecret: jwtSecret,
+		driver:     driver,
+		jwtSecret:  jwtSecret,
+		saltRounds: saltRounds,
 	}
 }
 
@@ -36,7 +38,7 @@ func NewNeo4jAuthService(driver neo4j.Driver, jwtSecret string) AuthService {
 // with the returned user.
 // tag::register[]
 func (as *neo4jAuthService) Register(email, plainPassword, name string) (user User, err error) {
-	encryptedPassword, err := encryptPassword(plainPassword)
+	encryptedPassword, err := encryptPassword(plainPassword, as.saltRounds)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +148,8 @@ func (as *neo4jAuthService) LogIn(email string, password string) (user User, err
 	// end::return[]
 }
 
-func encryptPassword(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+func encryptPassword(password string, cost int) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), cost)
 	if err != nil {
 		return "", err
 	}
