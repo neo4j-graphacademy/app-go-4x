@@ -44,6 +44,7 @@ func main() {
 	movieRoutes := routes.NewMovieRoutes(movieService)
 	peopleRoutes := routes.NewPeopleRoutes(
 		services.NewPeopleService(driver),
+		movieService,
 	)
 	genreRoutes.AddRoutes(server)
 	movieRoutes.AddRoutes(server)

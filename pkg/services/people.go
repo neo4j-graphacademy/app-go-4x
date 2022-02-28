@@ -11,6 +11,10 @@ type Person = map[string]interface{}
 
 type PeopleService interface {
 	FindAll(page *paging.Paging) ([]Person, error)
+
+	FindOneById(id string) (Person, error)
+
+	FindAllBySimilarity(id string, page *paging.Paging) ([]Person, error)
 }
 
 type neo4jPeopleService struct {
@@ -28,7 +32,7 @@ func NewPeopleService(driver neo4j.Driver) PeopleService {
 // number passed as `limit`.  The `skip` variable should be used to skip a
 // certain number of rows.
 // tag::all[]
-func (n *neo4jPeopleService) FindAll(page *paging.Paging) (persons []Person, err error) {
+func (n *neo4jPeopleService) FindAll(page *paging.Paging) (people []Person, err error) {
 	session := n.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
@@ -37,7 +41,7 @@ func (n *neo4jPeopleService) FindAll(page *paging.Paging) (persons []Person, err
 	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(fmt.Sprintf(`
 			MATCH (p:Person)
-			WHERE $q IS null OR p.name CONTAINS $q
+			WHERE $q IS NULL OR toLower(p.name) CONTAINS toLower($q)
 			RETURN p { .* } AS person
 			ORDER BY p.`+"`%s`"+` %s
 			SKIP $skip
@@ -65,8 +69,100 @@ func (n *neo4jPeopleService) FindAll(page *paging.Paging) (persons []Person, err
 	if err != nil {
 		return nil, err
 	}
-	persons = results.([]Person)
-	return persons, nil
+	people = results.([]Person)
+	return people, nil
 }
 
 //end::all[]
+
+// FindOneById finds a user by their ID.
+// If no user is found, an error should be thrown.
+// tag::findById[]
+func (n *neo4jPeopleService) FindOneById(id string) (person Person, err error) {
+	// Open a new database session
+	session := n.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
+
+	// Get a person from the database
+	result, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		result, err := tx.Run(`
+			MATCH (p:Person {tmdbId: $id})
+			RETURN p {
+				.*,
+				actedCount: size((p)-[:ACTED_IN]->()),
+				directedCount: size((p)-[:DIRECTED]->())
+			} AS person`,
+			map[string]interface{}{"id": id})
+		if err != nil {
+			return nil, err
+		}
+		record, err := result.Single()
+		if err != nil {
+			return nil, err
+		}
+		person, _ := record.Get("person")
+		return person.(map[string]interface{}), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	person = result.(Person)
+	return person, nil
+}
+
+//end::findById[]
+
+// FindAllBySimilarity gets a list of similar people to a Person, ordered by their similarity score
+// in descending order.
+// tag::getSimilarPeople[]
+func (n *neo4jPeopleService) FindAllBySimilarity(id string, page *paging.Paging) (people []Person, err error) {
+	// Open a new database session
+	session := n.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
+
+	// Get a list of similar people to the person by their id
+	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		result, err := tx.Run(`
+			MATCH (:Person {tmdbId: $id})-[:ACTED_IN|DIRECTED]->(m)<-[r:ACTED_IN|DIRECTED]-(p)
+			RETURN p {
+				.*,
+				actedCount: size((p)-[:ACTED_IN]->()),
+				directedCount: size((p)-[:DIRECTED]->()),
+				inCommon: collect(m {.tmdbId, .title, type: type(r)})
+			} AS person
+			ORDER BY size(person.inCommon) DESC
+			SKIP $skip
+			LIMIT $limit`,
+			map[string]interface{}{
+				"id":    id,
+				"skip":  page.Skip(),
+				"limit": page.Limit(),
+			})
+		if err != nil {
+			return nil, err
+		}
+		records, err := result.Collect()
+		if err != nil {
+			return nil, err
+		}
+		var results []map[string]interface{}
+		for _, record := range records {
+			person, _ := record.Get("person")
+			results = append(results, person.(map[string]interface{}))
+		}
+		return results, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	people = results.([]Person)
+	return people, nil
+}
+
+// end::getSimilarPeople[]
