@@ -24,6 +24,6 @@ func (m *movieRoutes) AddRoutes(server *http.ServeMux) {
 func (m *movieRoutes) FindAllMovies(request *http.Request, writer http.ResponseWriter) {
 	page := paging.ParsePaging(request, paging.MovieSortableAttributes())
 	// TODO: extract userId
-	genres, err := m.movies.FindAll("", page)
-	serializeJson(writer, genres, err)
+	movies, err := m.movies.FindAll("", page)
+	serializeJson(writer, movies, err)
 }
