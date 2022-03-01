@@ -35,7 +35,7 @@ func (fs *neo4jFavoriteService) Save(userId, movieId string) (_ Movie, err error
 	}()
 
 	// tag::create[]
-	// Create HAS_FAVORITE relationship within a Write Transaction
+	// Create HAS_FAVORITE relationship within a write Transaction
 	result, err := session.WriteTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(`
 			MATCH (u:User {userId: $userId})
@@ -143,7 +143,7 @@ func (fs *neo4jFavoriteService) Delete(userId, movieId string) (_ Movie, err err
 		err = ioutils.DeferredClose(session, err)
 	}()
 
-	// Delete HAS_FAVORITE relationship within a Write Transaction
+	// Delete HAS_FAVORITE relationship within a write Transaction
 	result, err := session.WriteTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(`
 			MATCH (u:User {userId: $userId})-[r:HAS_FAVORITE]->(m:Movie {tmdbId: $movieId})

@@ -32,7 +32,7 @@ func NewPeopleService(driver neo4j.Driver) PeopleService {
 // number passed as `limit`.  The `skip` variable should be used to skip a
 // certain number of rows.
 // tag::all[]
-func (n *neo4jPeopleService) FindAll(page *paging.Paging) (people []Person, err error) {
+func (n *neo4jPeopleService) FindAll(page *paging.Paging) (_ []Person, err error) {
 	session := n.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
@@ -69,8 +69,7 @@ func (n *neo4jPeopleService) FindAll(page *paging.Paging) (people []Person, err 
 	if err != nil {
 		return nil, err
 	}
-	people = results.([]Person)
-	return people, nil
+	return results.([]Person), nil
 }
 
 //end::all[]
@@ -78,7 +77,7 @@ func (n *neo4jPeopleService) FindAll(page *paging.Paging) (people []Person, err 
 // FindOneById finds a user by their ID.
 // If no user is found, an error should be thrown.
 // tag::findById[]
-func (n *neo4jPeopleService) FindOneById(id string) (person Person, err error) {
+func (n *neo4jPeopleService) FindOneById(id string) (_ Person, err error) {
 	// Open a new database session
 	session := n.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
@@ -109,8 +108,7 @@ func (n *neo4jPeopleService) FindOneById(id string) (person Person, err error) {
 	if err != nil {
 		return nil, err
 	}
-	person = result.(Person)
-	return person, nil
+	return result.(Person), nil
 }
 
 //end::findById[]
@@ -118,7 +116,7 @@ func (n *neo4jPeopleService) FindOneById(id string) (person Person, err error) {
 // FindAllBySimilarity gets a list of similar people to a Person, ordered by their similarity score
 // in descending order.
 // tag::getSimilarPeople[]
-func (n *neo4jPeopleService) FindAllBySimilarity(id string, page *paging.Paging) (people []Person, err error) {
+func (n *neo4jPeopleService) FindAllBySimilarity(id string, page *paging.Paging) (_ []Person, err error) {
 	// Open a new database session
 	session := n.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
@@ -161,8 +159,7 @@ func (n *neo4jPeopleService) FindAllBySimilarity(id string, page *paging.Paging)
 	if err != nil {
 		return nil, err
 	}
-	people = results.([]Person)
-	return people, nil
+	return results.([]Person), nil
 }
 
 // end::getSimilarPeople[]

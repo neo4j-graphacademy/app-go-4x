@@ -30,7 +30,7 @@ func NewRatingService(driver neo4j.Driver) RatingService {
 // Results should be limited to the number passed as `limit`.
 // The `skip` variable should be used to skip a certain number of rows.
 // tag::forMovie[]
-func (rs *neo4jRatingService) FindAllByMovieId(movieId string, page *paging.Paging) (ratings []Rating, err error) {
+func (rs *neo4jRatingService) FindAllByMovieId(movieId string, page *paging.Paging) (_ []Rating, err error) {
 	// Open a new database session
 	session := rs.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
@@ -72,8 +72,7 @@ func (rs *neo4jRatingService) FindAllByMovieId(movieId string, page *paging.Pagi
 	if err != nil {
 		return nil, err
 	}
-	ratings = results.([]Rating)
-	return ratings, nil
+	return results.([]Rating), nil
 }
 
 // end::forMovie[]
@@ -83,7 +82,7 @@ func (rs *neo4jRatingService) FindAllByMovieId(movieId string, page *paging.Pagi
 //
 // If the User or Movie cannot be found, a NotFoundError should be thrown
 // tag::add[]
-func (rs *neo4jRatingService) Save(rating int, movieId string, userId string) (movie Movie, err error) {
+func (rs *neo4jRatingService) Save(rating int, movieId string, userId string) (_ Movie, err error) {
 	// tag::write[]
 	// Save the rating in the database
 

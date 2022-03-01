@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-// DeferredClose handles ioutils that happen with deferred calls
+// DeferredClose handles errors that happen with deferred calls
 // to Closer on the provided closer.
 // Note: since deferred function arguments are evaluated immediately, this
 // function should always be called within an anonymous function.

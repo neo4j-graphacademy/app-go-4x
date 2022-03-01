@@ -35,7 +35,7 @@ func NewGenreService(driver neo4j.Driver) GenreService {
 // ]
 //
 // tag::all[]
-func (gs *neo4jGenreService) FindAll() (genres []Genre, err error) {
+func (gs *neo4jGenreService) FindAll() (_ []Genre, err error) {
 	session := gs.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
@@ -78,8 +78,7 @@ func (gs *neo4jGenreService) FindAll() (genres []Genre, err error) {
 	if err != nil {
 		return nil, err
 	}
-	genres = results.([]Genre)
-	return genres, nil
+	return results.([]Genre), nil
 }
 
 // end::all[]
@@ -89,7 +88,7 @@ func (gs *neo4jGenreService) FindAll() (genres []Genre, err error) {
 //
 // If the genre is not found, an error should be thrown.
 // tag::find[]
-func (gs *neo4jGenreService) FindOneByName(name string) (genre Genre, err error) {
+func (gs *neo4jGenreService) FindOneByName(name string) (_ Genre, err error) {
 	session := gs.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)

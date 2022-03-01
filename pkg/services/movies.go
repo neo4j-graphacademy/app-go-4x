@@ -36,9 +36,9 @@ func NewMovieService(driver neo4j.Driver) MovieService {
 // used to skip a certain number of rows.
 //
 // If a userId value is supplied, a `favorite` boolean property should be returned to
-// signify whether the user has aded the movie to their "My Favorites" list.
+// signify whether the user has added the movie to their "My Favorites" list.
 // tag::all[]
-func (gs *neo4jMovieService) FindAll(userId string, page *paging.Paging) (movies []Movie, err error) {
+func (gs *neo4jMovieService) FindAll(userId string, page *paging.Paging) (_ []Movie, err error) {
 	session := gs.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
@@ -92,9 +92,8 @@ func (gs *neo4jMovieService) FindAll(userId string, page *paging.Paging) (movies
 	if err != nil {
 		return nil, err
 	}
-	movies = results.([]Movie)
 	// tag::return[]
-	return movies, nil
+	return results.([]Movie), nil
 	// end::return[]
 }
 
@@ -112,7 +111,7 @@ func (gs *neo4jMovieService) FindAll(userId string, page *paging.Paging) (movies
 // signify whether the user has added the movie to their "My Favorites" list.
 //
 // tag::getByGenre[]
-func (gs *neo4jMovieService) FindAllByGenre(genre string, userId string, page *paging.Paging) (movies []Movie, err error) {
+func (gs *neo4jMovieService) FindAllByGenre(genre string, userId string, page *paging.Paging) (_ []Movie, err error) {
 	session := gs.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
@@ -156,8 +155,7 @@ func (gs *neo4jMovieService) FindAllByGenre(genre string, userId string, page *p
 	if err != nil {
 		return nil, err
 	}
-	movies = results.([]Movie)
-	return movies, nil
+	return results.([]Movie), nil
 }
 
 // end::getByGenre[]
@@ -173,7 +171,7 @@ func (gs *neo4jMovieService) FindAllByGenre(genre string, userId string, page *p
 // If a userId value is supplied, a `favorite` boolean property should be returned to
 // signify whether the user has added the movie to their "My Favorites" list.
 // tag::getForActor[]
-func (gs *neo4jMovieService) FindAllByActorId(actorId string, userId string, page *paging.Paging) (movies []Movie, err error) {
+func (gs *neo4jMovieService) FindAllByActorId(actorId string, userId string, page *paging.Paging) (_ []Movie, err error) {
 	// Get Movies acted in by a Person
 	// MATCH (:Person {tmdbId: $id})-[:ACTED_IN]->(m:Movie)
 
@@ -228,8 +226,7 @@ func (gs *neo4jMovieService) FindAllByActorId(actorId string, userId string, pag
 	if err != nil {
 		return nil, err
 	}
-	movies = results.([]Movie)
-	return movies, nil
+	return results.([]Movie), nil
 }
 
 // end::getForActor[]
@@ -245,7 +242,7 @@ func (gs *neo4jMovieService) FindAllByActorId(actorId string, userId string, pag
 // If a userId value is supplied, a `favorite` boolean property should be returned to
 // signify whether the user has added the movie to their "My Favorites" list.
 // tag::getForDirector[]
-func (gs *neo4jMovieService) FindAllByDirectorId(actorId string, userId string, page *paging.Paging) (movies []Movie, err error) {
+func (gs *neo4jMovieService) FindAllByDirectorId(actorId string, userId string, page *paging.Paging) (_ []Movie, err error) {
 	// Get Movies directed by a Person
 	// MATCH (:Person {tmdbId: $id})-[:DIRECTED]->(m:Movie)
 
@@ -300,8 +297,7 @@ func (gs *neo4jMovieService) FindAllByDirectorId(actorId string, userId string, 
 	if err != nil {
 		return nil, err
 	}
-	movies = results.([]Movie)
-	return movies, nil
+	return results.([]Movie), nil
 }
 
 // end::getForDirector[]
@@ -311,10 +307,10 @@ func (gs *neo4jMovieService) FindAllByDirectorId(actorId string, userId string, 
 // be included.
 // The number of incoming RATED relationships should also be returned as `ratingCount`
 //
-// If a userId value is suppled, a `favorite` boolean property should be returned to
-// signify whether the user has aded the movie to their "My Favorites" list.
+// If a userId value is supplied, a `favorite` boolean property should be returned to
+// signify whether the user has added the movie to their "My Favorites" list.
 // tag::findById[]
-func (gs *neo4jMovieService) FindOneById(id string, userId string) (movie Movie, err error) {
+func (gs *neo4jMovieService) FindOneById(id string, userId string) (_ Movie, err error) {
 	// Find a movie by its ID
 	// MATCH (m:Movie {tmdbId: $id})
 
@@ -362,8 +358,7 @@ func (gs *neo4jMovieService) FindOneById(id string, userId string) (movie Movie,
 	if err != nil {
 		return nil, err
 	}
-	movie = result.(Movie)
-	return movie, nil
+	return result.(Movie), nil
 }
 
 // end::findById[]
@@ -380,11 +375,11 @@ func (gs *neo4jMovieService) FindOneById(id string, userId string) (movie Movie,
 // If a userId value is supplied, a `favorite` boolean property should be returned to
 // signify whether the user has added the movie to their "My Favorites" list.
 // tag::getSimilarMovies[]
-func (gs *neo4jMovieService) FindAllBySimilarity(id string, userId string, page *paging.Paging) (movies []Movie, err error) {
+func (gs *neo4jMovieService) FindAllBySimilarity(id string, userId string, page *paging.Paging) (_ []Movie, err error) {
 	// Get similar movies based on genres or ratings
 	// MATCH (:Movie {tmdbId: $id})-[:IN_GENRE|ACTED_IN|DIRECTED]->()<-[:IN_GENRE|ACTED_IN|DIRECTED]-(m)
 
-	// Open an Session
+	// Open a Session
 	session := gs.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
@@ -441,8 +436,7 @@ func (gs *neo4jMovieService) FindAllBySimilarity(id string, userId string, page 
 	if err != nil {
 		return nil, err
 	}
-	movies = results.([]Movie)
-	return movies, nil
+	return results.([]Movie), nil
 }
 
 // end::getSimilarMovies[]
