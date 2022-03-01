@@ -112,20 +112,22 @@ func (rs *neo4jRatingService) Save(rating int, movieId string, userId string) (m
 			return nil, err
 		}
 
-		// tag::throw[]
 		record, err := result.Single()
 		if err != nil {
 			return nil, err
 		}
-		// end::throw[]
 
 		movie, _ := record.Get("movie")
 		return movie.(map[string]interface{}), nil
 	})
+	// end::write[]
 
+	// tag::throw[]
 	if err != nil {
 		return nil, err
 	}
+	// end::throw[]
+
 	// tag::addreturn[]
 	// Return movie details and a rating
 	return result.(Movie), nil

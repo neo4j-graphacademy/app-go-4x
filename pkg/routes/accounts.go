@@ -3,6 +3,7 @@ package routes
 import (
 	"fmt"
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
+	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
 	"github.com/neo4j-graphacademy/neoflix/pkg/services"
 	"net/http"
 	"reflect"
@@ -11,15 +12,18 @@ import (
 )
 
 type accountRoutes struct {
-	ratings services.RatingService
-	auth    services.AuthService
+	ratings   services.RatingService
+	auth      services.AuthService
+	favorites services.FavoriteService
 }
 
 func NewAccountRoutes(ratings services.RatingService,
-	auth services.AuthService) Routable {
+	auth services.AuthService,
+	favorites services.FavoriteService) Routable {
 	return &accountRoutes{
-		ratings: ratings,
-		auth:    auth,
+		ratings:   ratings,
+		auth:      auth,
+		favorites: favorites,
 	}
 }
 
@@ -31,6 +35,12 @@ func (a *accountRoutes) Register(server *http.ServeMux) {
 			case strings.HasPrefix(path, "ratings/"):
 				movieId := strings.TrimPrefix(path, "ratings/")
 				a.SaveRating(movieId, request, writer)
+			case strings.HasPrefix(path, "favorites/"):
+				movieId := strings.TrimPrefix(path, "favorites/")
+				a.SaveFavorite(movieId, request, writer)
+			case path == "favorites":
+				page := paging.ParsePaging(request, paging.MovieSortableAttributes())
+				a.FindAllFavorites(page, request, writer)
 			}
 		})
 }
@@ -54,11 +64,27 @@ func (a *accountRoutes) SaveRating(movieId string, request *http.Request, writer
 		return
 	}
 	movie, err := a.ratings.Save(rating, movieId, userId)
+	serializeJson(writer, movie, err)
+}
+
+func (a *accountRoutes) SaveFavorite(movieId string, request *http.Request, writer http.ResponseWriter) {
+	userId, err := extractUserId(request, a.auth)
 	if err != nil {
 		serializeError(writer, err)
 		return
 	}
+	movie, err := a.favorites.Save(userId, movieId)
 	serializeJson(writer, movie, err)
+}
+
+func (a *accountRoutes) FindAllFavorites(page *paging.Paging, request *http.Request, writer http.ResponseWriter) {
+	userId, err := extractUserId(request, a.auth)
+	if err != nil {
+		serializeError(writer, err)
+		return
+	}
+	movies, err := a.favorites.FindAllByUserId(userId, page)
+	serializeJson(writer, movies, err)
 }
 
 func extractUserId(request *http.Request, auth services.AuthService) (string, error) {

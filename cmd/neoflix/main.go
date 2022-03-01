@@ -40,7 +40,8 @@ func main() {
 		services.NewGenreService(driver),
 		services.NewRatingService(driver),
 		services.NewPeopleService(driver),
-		services.NewAuthService(driver, config.JwtSecret, config.SaltRounds))
+		services.NewAuthService(driver, config.JwtSecret, config.SaltRounds),
+		services.NewFavoriteService(driver))
 
 	server := newHttpServer()
 	for _, route := range allRoutes {
@@ -75,13 +76,14 @@ func allRoutes(
 	genreService services.GenreService,
 	ratingService services.RatingService,
 	peopleService services.PeopleService,
-	authService services.AuthService) []routes.Routable {
+	authService services.AuthService,
+	favoriteService services.FavoriteService) []routes.Routable {
 
 	return []routes.Routable{
 		routes.NewGenreRoutes(genreService, movieService, authService),
 		routes.NewMovieRoutes(movieService, ratingService, authService),
 		routes.NewPeopleRoutes(peopleService, movieService, authService),
 		routes.NewAuthRoutes(authService),
-		routes.NewAccountRoutes(ratingService, authService),
+		routes.NewAccountRoutes(ratingService, authService, favoriteService),
 	}
 }
