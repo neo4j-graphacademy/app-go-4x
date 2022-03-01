@@ -105,9 +105,14 @@ func (a *accountRoutes) DeleteFavorite(movieId string, request *http.Request, wr
 
 func extractUserId(request *http.Request, auth services.AuthService) (string, error) {
 	bearer := strings.TrimPrefix(request.Header.Get("Authorization"), "Bearer ")
+	// FIXME remove once frontend bug fixed
+	if bearer == "undefined" {
+		bearer = ""
+	}
 	return auth.ExtractUserId(bearer)
 }
 
+// FIXME remove once frontend bug fixed - rating should always be a number
 func parseIntRating(rating interface{}) (int, error) {
 	if ratingStr, ok := rating.(string); ok {
 		return strconv.Atoi(ratingStr)
