@@ -37,7 +37,13 @@ func (a *accountRoutes) Register(server *http.ServeMux) {
 				a.SaveRating(movieId, request, writer)
 			case strings.HasPrefix(path, "favorites/"):
 				movieId := strings.TrimPrefix(path, "favorites/")
-				a.SaveFavorite(movieId, request, writer)
+				switch request.Method {
+				case "POST":
+					a.SaveFavorite(movieId, request, writer)
+				case "DELETE":
+					a.DeleteFavorite(movieId, request, writer)
+				}
+
 			case path == "favorites":
 				page := paging.ParsePaging(request, paging.MovieSortableAttributes())
 				a.FindAllFavorites(page, request, writer)
@@ -85,6 +91,16 @@ func (a *accountRoutes) FindAllFavorites(page *paging.Paging, request *http.Requ
 	}
 	movies, err := a.favorites.FindAllByUserId(userId, page)
 	serializeJson(writer, movies, err)
+}
+
+func (a *accountRoutes) DeleteFavorite(movieId string, request *http.Request, writer http.ResponseWriter) {
+	userId, err := extractUserId(request, a.auth)
+	if err != nil {
+		serializeError(writer, err)
+		return
+	}
+	movie, err := a.favorites.Delete(userId, movieId)
+	serializeJson(writer, movie, err)
 }
 
 func extractUserId(request *http.Request, auth services.AuthService) (string, error) {
