@@ -35,32 +35,18 @@ func main() {
 		ioutils.PanicOnError(driver.Close())
 	}()
 
-	server := NewHttpServer()
-
-	movieService := services.NewMovieService(driver)
-	genreRoutes := routes.NewGenreRoutes(
+	allRoutes := allRoutes(
+		services.NewMovieService(driver),
 		services.NewGenreService(driver),
-		movieService,
-	)
-	movieRoutes := routes.NewMovieRoutes(
-		movieService,
 		services.NewRatingService(driver),
-	)
-	peopleRoutes := routes.NewPeopleRoutes(
 		services.NewPeopleService(driver),
-		movieService,
-	)
-	authRoutes := routes.NewAuthRoutes(
-		services.NewNeo4jAuthService(
-			driver,
-			config.JwtSecret,
-			config.SaltRounds,
-		),
-	)
-	genreRoutes.AddRoutes(server)
-	movieRoutes.AddRoutes(server)
-	peopleRoutes.AddRoutes(server)
-	authRoutes.AddRoutes(server)
+		services.NewAuthService(driver, config.JwtSecret, config.SaltRounds))
+
+	server := newHttpServer()
+	for _, route := range allRoutes {
+		route.Register(server)
+	}
+
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), server); err != nil {
 		ioutils.PanicOnError(err)
 	}
@@ -78,8 +64,24 @@ func readConfig() (*Config, error) {
 	return &config, nil
 }
 
-func NewHttpServer() *http.ServeMux {
+func newHttpServer() *http.ServeMux {
 	server := http.NewServeMux()
 	server.Handle("/", http.FileServer(http.Dir("public")))
 	return server
+}
+
+func allRoutes(
+	movieService services.MovieService,
+	genreService services.GenreService,
+	ratingService services.RatingService,
+	peopleService services.PeopleService,
+	authService services.AuthService) []routes.Routable {
+
+	return []routes.Routable{
+		routes.NewGenreRoutes(genreService, movieService, authService),
+		routes.NewMovieRoutes(movieService, ratingService, authService),
+		routes.NewPeopleRoutes(peopleService, movieService, authService),
+		routes.NewAuthRoutes(authService),
+		routes.NewAccountRoutes(ratingService, authService),
+	}
 }

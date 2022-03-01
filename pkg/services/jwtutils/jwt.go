@@ -2,6 +2,7 @@ package jwtutils
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"time"
 )
@@ -21,6 +22,19 @@ func Sign(subject string, claims map[string]interface{}, secret string) (string,
 		RegisteredClaims: registeredClaims,
 	})
 	return token.SignedString([]byte(secret))
+}
+
+func ExtractToken(bearer string, secret string, mapper func(*jwt.Token) interface{}) (interface{}, error) {
+	token, err := jwt.Parse(bearer, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(secret), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapper(token), nil
 }
 
 type customClaims struct {

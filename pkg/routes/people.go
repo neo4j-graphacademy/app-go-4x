@@ -10,65 +10,76 @@ import (
 type peopleRoutes struct {
 	people services.PeopleService
 	movies services.MovieService
+	auth   services.AuthService
 }
 
 func NewPeopleRoutes(people services.PeopleService,
-	movies services.MovieService) Routable {
+	movies services.MovieService,
+	auth services.AuthService) Routable {
 	return &peopleRoutes{
 		people: people,
 		movies: movies,
+		auth:   auth,
 	}
 }
 
-func (m *peopleRoutes) AddRoutes(server *http.ServeMux) {
+func (p *peopleRoutes) Register(server *http.ServeMux) {
 	server.HandleFunc("/api/people/",
 		func(writer http.ResponseWriter, request *http.Request) {
 			path := strings.TrimPrefix(request.URL.Path, "/api/people/")
 			switch {
 			case path == "":
-				m.FindAllPeople(request, writer)
+				p.FindAllPeople(request, writer)
 			case strings.HasSuffix(path, "/similar"):
 				id := strings.TrimSuffix(path, "/similar")
-				m.FindAllPeopleBySimilarity(id, request, writer)
+				p.FindAllPeopleBySimilarity(id, request, writer)
 			case strings.HasSuffix(path, "/acted"):
 				id := strings.TrimSuffix(path, "/acted")
-				m.FindAllActedInMovies(id, request, writer)
+				p.FindAllActedInMovies(id, request, writer)
 			case strings.HasSuffix(path, "/directed"):
 				id := strings.TrimSuffix(path, "/directed")
-				m.FindAllDirectedMovies(id, request, writer)
+				p.FindAllDirectedMovies(id, request, writer)
 			default:
-				m.FindOnePersonById(path, writer)
+				p.FindOnePersonById(path, writer)
 			}
 		})
 }
 
-func (m *peopleRoutes) FindAllPeople(request *http.Request, writer http.ResponseWriter) {
+func (p *peopleRoutes) FindAllPeople(request *http.Request, writer http.ResponseWriter) {
 	page := paging.ParsePaging(request, paging.PersonSortableAttributes())
-	people, err := m.people.FindAll(page)
+	people, err := p.people.FindAll(page)
 	serializeJson(writer, people, err)
 }
 
-func (m *peopleRoutes) FindOnePersonById(personId string, writer http.ResponseWriter) {
-	person, err := m.people.FindOneById(personId)
+func (p *peopleRoutes) FindOnePersonById(personId string, writer http.ResponseWriter) {
+	person, err := p.people.FindOneById(personId)
 	serializeJson(writer, person, err)
 }
 
-func (m *peopleRoutes) FindAllPeopleBySimilarity(id string, request *http.Request, writer http.ResponseWriter) {
+func (p *peopleRoutes) FindAllPeopleBySimilarity(id string, request *http.Request, writer http.ResponseWriter) {
 	page := paging.ParsePaging(request, paging.PersonSortableAttributes())
-	people, err := m.people.FindAllBySimilarity(id, page)
+	people, err := p.people.FindAllBySimilarity(id, page)
 	serializeJson(writer, people, err)
 }
 
-func (m *peopleRoutes) FindAllActedInMovies(id string, request *http.Request, writer http.ResponseWriter) {
+func (p *peopleRoutes) FindAllActedInMovies(id string, request *http.Request, writer http.ResponseWriter) {
 	page := paging.ParsePaging(request, paging.MovieSortableAttributes())
-	// TODO: retrieve userId
-	movies, err := m.movies.FindAllByActorId(id, "", page)
+	userId, err := extractUserId(request, p.auth)
+	if err != nil {
+		serializeError(writer, err)
+		return
+	}
+	movies, err := p.movies.FindAllByActorId(id, userId, page)
 	serializeJson(writer, movies, err)
 }
 
-func (m *peopleRoutes) FindAllDirectedMovies(id string, request *http.Request, writer http.ResponseWriter) {
+func (p *peopleRoutes) FindAllDirectedMovies(id string, request *http.Request, writer http.ResponseWriter) {
 	page := paging.ParsePaging(request, paging.MovieSortableAttributes())
-	// TODO: retrieve userId
-	movies, err := m.movies.FindAllByDirectorId(id, "", page)
+	userId, err := extractUserId(request, p.auth)
+	if err != nil {
+		serializeError(writer, err)
+		return
+	}
+	movies, err := p.movies.FindAllByDirectorId(id, userId, page)
 	serializeJson(writer, movies, err)
 }

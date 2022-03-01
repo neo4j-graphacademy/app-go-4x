@@ -1,9 +1,8 @@
 package routes
 
 import (
-	"encoding/json"
+	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/services"
-	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -16,31 +15,26 @@ func NewAuthRoutes(auth services.AuthService) Routable {
 	return &authRoutes{auth: auth}
 }
 
-func (a *authRoutes) AddRoutes(server *http.ServeMux) {
+func (a *authRoutes) Register(server *http.ServeMux) {
 	server.HandleFunc("/api/auth/",
 		func(writer http.ResponseWriter, request *http.Request) {
 			path := request.URL.Path
 			switch {
 			case strings.HasSuffix(path, "/register"):
-				a.Register(request, writer)
+				a.Save(request, writer)
 			case strings.HasSuffix(path, "/login"):
 				a.Login(request, writer)
 			}
 		})
 }
 
-func (a *authRoutes) Register(request *http.Request, writer http.ResponseWriter) {
-	body, err := ioutil.ReadAll(request.Body)
+func (a *authRoutes) Save(request *http.Request, writer http.ResponseWriter) {
+	userData, err := ioutils.ReadJson(request.Body)
 	if err != nil {
 		serializeError(writer, err)
 		return
 	}
-	var userData map[string]interface{}
-	if err = json.Unmarshal(body, &userData); err != nil {
-		serializeError(writer, err)
-		return
-	}
-	user, err := a.auth.Register(
+	user, err := a.auth.Save(
 		userData["email"].(string),
 		userData["password"].(string),
 		userData["name"].(string),
@@ -49,17 +43,12 @@ func (a *authRoutes) Register(request *http.Request, writer http.ResponseWriter)
 }
 
 func (a *authRoutes) Login(request *http.Request, writer http.ResponseWriter) {
-	body, err := ioutil.ReadAll(request.Body)
+	userData, err := ioutils.ReadJson(request.Body)
 	if err != nil {
 		serializeError(writer, err)
 		return
 	}
-	var userData map[string]interface{}
-	if err = json.Unmarshal(body, &userData); err != nil {
-		serializeError(writer, err)
-		return
-	}
-	user, err := a.auth.LogIn(
+	user, err := a.auth.FindOneByEmailAndPassword(
 		userData["email"].(string),
 		userData["password"].(string),
 	)

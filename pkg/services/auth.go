@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/services/jwtutils"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -11,9 +12,11 @@ import (
 type User map[string]interface{}
 
 type AuthService interface {
-	Register(email, plainPassword, name string) (User, error)
+	Save(email, plainPassword, name string) (User, error)
 
-	LogIn(email string, password string) (User, error)
+	FindOneByEmailAndPassword(email string, password string) (User, error)
+
+	ExtractUserId(bearer string) (string, error)
 }
 
 type neo4jAuthService struct {
@@ -22,7 +25,7 @@ type neo4jAuthService struct {
 	saltRounds int
 }
 
-func NewNeo4jAuthService(driver neo4j.Driver, jwtSecret string, saltRounds int) AuthService {
+func NewAuthService(driver neo4j.Driver, jwtSecret string, saltRounds int) AuthService {
 	return &neo4jAuthService{
 		driver:     driver,
 		jwtSecret:  jwtSecret,
@@ -37,7 +40,7 @@ func NewNeo4jAuthService(driver neo4j.Driver, jwtSecret string, saltRounds int) 
 // The properties also be used to generate a JWT `token` which should be included
 // with the returned user.
 // tag::register[]
-func (as *neo4jAuthService) Register(email, plainPassword, name string) (user User, err error) {
+func (as *neo4jAuthService) Save(email, plainPassword, name string) (user User, err error) {
 	encryptedPassword, err := encryptPassword(plainPassword, as.saltRounds)
 	if err != nil {
 		return nil, err
@@ -96,7 +99,7 @@ func (as *neo4jAuthService) Register(email, plainPassword, name string) (user Us
 	// end::catch[]
 }
 
-func (as *neo4jAuthService) LogIn(email string, password string) (user User, err error) {
+func (as *neo4jAuthService) FindOneByEmailAndPassword(email string, password string) (user User, err error) {
 	// Open a new Session
 	// tag::catch[]
 	session := as.driver.NewSession(neo4j.SessionConfig{})
@@ -146,6 +149,20 @@ func (as *neo4jAuthService) LogIn(email string, password string) (user User, err
 	}
 	return userWithToken(user, token), nil
 	// end::return[]
+}
+
+func (as *neo4jAuthService) ExtractUserId(bearer string) (string, error) {
+	if bearer == "" {
+		return "", nil
+	}
+	userId, err := jwtutils.ExtractToken(bearer, as.jwtSecret, func(token *jwt.Token) interface{} {
+		claims := token.Claims.(jwt.MapClaims)
+		return claims["sub"]
+	})
+	if err != nil {
+		return "", err
+	}
+	return userId.(string), nil
 }
 
 func encryptPassword(password string, cost int) (string, error) {

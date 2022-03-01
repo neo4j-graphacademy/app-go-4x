@@ -11,6 +11,8 @@ type Rating = map[string]interface{}
 
 type RatingService interface {
 	FindAllByMovieId(id string, page *paging.Paging) ([]Rating, error)
+
+	Save(rating int, movieId string, userId string) (Movie, error)
 }
 
 type neo4jRatingService struct {
@@ -75,3 +77,59 @@ func (rs *neo4jRatingService) FindAllByMovieId(movieId string, page *paging.Pagi
 }
 
 // end::forMovie[]
+
+// Save adds a relationship between a User and Movie with a `rating` property.
+// The `rating` parameter should be converted to a Neo4j Integer.
+//
+// If the User or Movie cannot be found, a NotFoundError should be thrown
+// tag::add[]
+func (rs *neo4jRatingService) Save(rating int, movieId string, userId string) (movie Movie, err error) {
+	// tag::write[]
+	// Save the rating in the database
+
+	// Open a new session
+	session := rs.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
+
+	// Run the cypher query
+	result, err := session.WriteTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		result, err := tx.Run(`
+			MATCH (u:User {userId: $userId})
+			MATCH (m:Movie {tmdbId: $movieId})
+
+			MERGE (u)-[r:RATED]->(m)
+			SET r.rating = $rating, r.timestamp = timestamp()
+
+			RETURN m { .*, rating: r.rating } AS movie
+`, map[string]interface{}{
+			"userId":  userId,
+			"movieId": movieId,
+			"rating":  rating,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// tag::throw[]
+		record, err := result.Single()
+		if err != nil {
+			return nil, err
+		}
+		// end::throw[]
+
+		movie, _ := record.Get("movie")
+		return movie.(map[string]interface{}), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	// tag::addreturn[]
+	// Return movie details and a rating
+	return result.(Movie), nil
+	// end::addreturn[]
+}
+
+// end::add[]
