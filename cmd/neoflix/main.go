@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes"
 	"github.com/neo4j-graphacademy/neoflix/pkg/services"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
-	"io/ioutil"
-	"net/http"
 )
 
 type Config struct {
@@ -53,6 +54,7 @@ func main() {
 	}
 }
 
+// tag::readConfig[]
 func readConfig() (*Config, error) {
 	file, err := ioutil.ReadFile("config.json")
 	if err != nil {
@@ -64,6 +66,8 @@ func readConfig() (*Config, error) {
 	}
 	return &config, nil
 }
+
+// end::readConfig[]
 
 func newHttpServer() *http.ServeMux {
 	server := http.NewServeMux()
