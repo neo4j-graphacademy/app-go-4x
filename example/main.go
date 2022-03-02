@@ -7,6 +7,24 @@ import (
 
 // end::import[]
 
+/*
+// tag::pseudo[]
+driver = GraphDatabase.driver(
+  connectionString, // <1>
+  auth=(username, password), // <2>
+  **configuration // <3>
+)
+// end::pseudo[]
+
+// tag::connection[]
+  address of server
+          ↓
+neo4j://localhost:7687
+  ↑                ↑
+scheme        port number
+// end::connection[]
+*/
+
 func helloWorld(uri, username, password string) (string, error) {
 	// tag::driver[]
 	driver, err := neo4j.NewDriver(uri, neo4j.BasicAuth(username, password, ""))
