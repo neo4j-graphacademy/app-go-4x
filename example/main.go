@@ -25,6 +25,18 @@ scheme        port number
 // end::connection[]
 */
 
+func basicAuth() (neo4j.AuthToken, error) {
+	username := "neo4j"
+	password := "letmein"
+
+	auth :=
+		// tag::auth[]
+		neo4j.BasicAuth(username, password, "")
+	// end::auth[]
+
+	return auth, nil
+}
+
 func helloWorld(uri, username, password string) (string, error) {
 	// tag::driver[]
 	driver, err := neo4j.NewDriver(uri, neo4j.BasicAuth(username, password, ""))
