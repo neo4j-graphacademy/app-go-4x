@@ -13,7 +13,7 @@ func helloWorld(uri, username, password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// tag::driver[]
+	// end::driver[]
 
 	// tag::close[]
 	defer driver.Close()
