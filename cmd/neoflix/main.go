@@ -34,6 +34,7 @@ func main() {
 		route.Register(server)
 	}
 
+	fmt.Printf("Server started on port %d\n", settings.Port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", settings.Port), server); err != nil {
 		ioutils.PanicOnError(err)
 	}
