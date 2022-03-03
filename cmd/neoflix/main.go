@@ -1,35 +1,20 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	config "github.com/neo4j-graphacademy/neoflix/pkg/config"
 	"net/http"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes"
 	"github.com/neo4j-graphacademy/neoflix/pkg/services"
-	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
-type Config struct {
-	Uri      string `json:"NEO4J_URI"`
-	Username string `json:"NEO4J_USERNAME"`
-	Password string `json:"NEO4J_PASSWORD"`
-
-	Port       int    `json:"APP_PORT"`
-	JwtSecret  string `json:"JWT_SECRET"`
-	SaltRounds int    `json:"SALT_ROUNDS"`
-}
-
 func main() {
-	config, err := readConfig()
+	settings, err := config.ReadConfig("config.json")
 	ioutils.PanicOnError(err)
 	// tag::driver[]
-	driver, err := neo4j.NewDriver(
-		config.Uri,
-		neo4j.BasicAuth(config.Username, config.Password, ""),
-	)
+	driver, err := config.NewDriver(settings)
 	// end::driver[]
 	ioutils.PanicOnError(err)
 	defer func() {
@@ -41,7 +26,7 @@ func main() {
 		services.NewGenreService(driver),
 		services.NewRatingService(driver),
 		services.NewPeopleService(driver),
-		services.NewAuthService(driver, config.JwtSecret, config.SaltRounds),
+		services.NewAuthService(driver, settings.JwtSecret, settings.SaltRounds),
 		services.NewFavoriteService(driver))
 
 	server := newHttpServer()
@@ -49,25 +34,10 @@ func main() {
 		route.Register(server)
 	}
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), server); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", settings.Port), server); err != nil {
 		ioutils.PanicOnError(err)
 	}
 }
-
-// tag::readConfig[]
-func readConfig() (*Config, error) {
-	file, err := ioutil.ReadFile("config.json")
-	if err != nil {
-		return nil, err
-	}
-	config := Config{}
-	if err = json.Unmarshal(file, &config); err != nil {
-		return nil, err
-	}
-	return &config, nil
-}
-
-// end::readConfig[]
 
 func newHttpServer() *http.ServeMux {
 	server := http.NewServeMux()
