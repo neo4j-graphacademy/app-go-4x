@@ -37,9 +37,10 @@ func basicAuth() (neo4j.AuthToken, error) {
 	return auth, nil
 }
 
-func helloWorld(uri, username, password string) (string, error) {
+func helloWorld() (string, error) {
 	// tag::driver[]
-	driver, err := neo4j.NewDriver(uri, neo4j.BasicAuth(username, password, ""))
+	driver, err := neo4j.NewDriver("neo4j+s://dbhash.databases.neo4j.io",
+		neo4j.BasicAuth("neo4j", "letmein", ""))
 	if err != nil {
 		return "", err
 	}
