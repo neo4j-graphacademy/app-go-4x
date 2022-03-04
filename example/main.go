@@ -37,7 +37,8 @@ func basicAuth() (neo4j.AuthToken, error) {
 	return auth, nil
 }
 
-func helloWorld() (string, error) {
+// tag::createPerson[]
+func helloWorld(name string) (string, error) {
 	// tag::driver[]
 	driver, err := neo4j.NewDriver("neo4j+s://dbhash.databases.neo4j.io",
 		neo4j.BasicAuth("neo4j", "letmein", ""))
@@ -58,29 +59,87 @@ func helloWorld() (string, error) {
 	// end::verifyConnectivity[]
 
 	// tag::session[]
-	session := driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+	session := driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 	// end::session[]
 
 	// tag::writeTransaction[]
-	greeting, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
+	name, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 		result, err := transaction.Run(
-			"CREATE (a:Greeting) SET a.message = $message RETURN a.message + ', from node ' + id(a)",
-			map[string]interface{}{"message": "hello, world"})
+			"CREATE (p:Person {name: $name}) RETURN p",
+			map[string]interface{}{"name": name})
 		if err != nil {
 			return nil, err
 		}
 
-		if result.Next() {
-			return result.Record().Values[0], nil
-		}
+		person := result.Record().Values[0].(neo4j.Node)
 
-		return nil, result.Err()
+		return person.Props["name"], result.Err()
 	})
 	if err != nil {
 		return "", err
 	}
 	// end::writeTransaction[]
 
-	return greeting.(string), nil
+	return name.(string), nil
+}
+
+// end::createPerson[]
+
+func SessionRunExample() (string, error) {
+	driver, err := neo4j.NewDriver("neo4j://localhost:7687",
+		neo4j.BasicAuth("neo4j", "letmein", ""))
+	if err != nil {
+		return "", err
+	}
+
+	// tag::sessionWithArgs[]
+	session := driver.NewSession(neo4j.SessionConfig{DatabaseName: "movies", AccessMode: neo4j.AccessModeWrite})
+	defer session.Close()
+	// end::session[]
+
+	// tag::session.run[]
+	result, err = session.Run(
+		"MATCH (p:Person {name: $name}) RETURN p",
+		map[string]interface{}{"name": "Tom Hanks"})
+	// end::session.run[]
+
+	return "", nil
+}
+
+func ExplicitTranactionExample() (string, error) {
+	driver, err := neo4j.NewDriver("neo4j://localhost:7687",
+		neo4j.BasicAuth("neo4j", "letmein", ""))
+	if err != nil {
+		return "", err
+	}
+
+	session := driver.NewSession(neo4j.SessionConfig{DatabaseName: "reviews", AccessMode: neo4j.AccessModeWrite})
+
+	// tag::session.close[]
+	defer session.Close()
+	// end::session.close[]
+
+	// tag::session.beginTransaction.Try
+	// Begin Transaction
+	tx, err := session.BeginTransaction()
+	if err != nil {
+		return "", err
+	}
+
+	// Run a Cypher Query
+	result, err = tx.Run(cypher, params)
+
+	// If something goes wrong then rollback the transaction
+	if err != nil {
+		tx.Rollback()
+
+		return "", err
+	}
+
+	// Otherwise, commit the transaction
+	tx.Commit()
+	// end::session.beginTransaction.Try
+
+	return "", nil
 }
