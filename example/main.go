@@ -9,7 +9,7 @@ import (
 
 /*
 // tag::pseudo[]
-driver = GraphDatabase.driver(
+driver = neo4j.newDriver(
   connectionString, // <1>
   auth=(username, password), // <2>
   **configuration // <3>
