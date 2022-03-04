@@ -63,7 +63,7 @@ func helloWorld(name string) (string, error) {
 	defer session.Close()
 	// end::session[]
 
-	// tag::writeTransaction[]
+	// tag::session.writeTransaction[]
 	name, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 		result, err := transaction.Run(
 			"CREATE (p:Person {name: $name}) RETURN p",
@@ -79,7 +79,7 @@ func helloWorld(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// end::writeTransaction[]
+	// end::session.writeTransaction[]
 
 	return name.(string), nil
 }
@@ -144,9 +144,11 @@ func ExplicitTranactionExample() (string, error) {
 	defer session.Close()
 	// end::session.close[]
 
-	// tag::session.beginTransaction.Try
+	// tag::session.beginTransaction.Try[]
+	// tag::session.beginTransaction[]
 	// Begin Transaction
 	tx, err := session.BeginTransaction()
+	// end::session.beginTransaction[]
 	if err != nil {
 		return "", err
 	}
@@ -163,7 +165,7 @@ func ExplicitTranactionExample() (string, error) {
 
 	// Otherwise, commit the transaction
 	tx.Commit()
-	// end::session.beginTransaction.Try
+	// end::session.beginTransaction.Try[]
 
 	return "", nil
 }
