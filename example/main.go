@@ -96,13 +96,37 @@ func SessionRunExample() (string, error) {
 	// tag::sessionWithArgs[]
 	session := driver.NewSession(neo4j.SessionConfig{DatabaseName: "movies", AccessMode: neo4j.AccessModeWrite})
 	defer session.Close()
-	// end::session[]
+	// end::sessionWithArgs[]
 
 	// tag::session.run[]
 	result, err = session.Run(
 		"MATCH (p:Person {name: $name}) RETURN p",
 		map[string]interface{}{"name": "Tom Hanks"})
 	// end::session.run[]
+
+	return "", nil
+}
+
+func ReadTransactionExample() (string, error) {
+	driver, err := neo4j.NewDriver("neo4j://localhost:7687",
+		neo4j.BasicAuth("neo4j", "letmein", ""))
+	if err != nil {
+		return "", err
+	}
+
+	session := driver.NewSession(neo4j.SessionConfig{DatabaseName: "reviews", AccessMode: neo4j.AccessModeWrite})
+
+	// tag::readTransaction[]
+	result, err := session.ReadTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
+		result, err := transaction.Run(
+			"MATCH (n) RETURN count(n) AS count", map[string]interface{}{})
+		if err != nil {
+			return nil, err
+		}
+
+		return result, result.Err()
+	})
+	// end::readTransaction[]
 
 	return "", nil
 }
