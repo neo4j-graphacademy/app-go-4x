@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	config "github.com/neo4j-graphacademy/neoflix/pkg/config"
 	"net/http"
+
+	config "github.com/neo4j-graphacademy/neoflix/pkg/config"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes"
@@ -13,6 +14,7 @@ import (
 func main() {
 	settings, err := config.ReadConfig("config.json")
 	ioutils.PanicOnError(err)
+	// tag::useDriver[]
 	// tag::driver[]
 	driver, err := config.NewDriver(settings)
 	// end::driver[]
@@ -28,6 +30,7 @@ func main() {
 		services.NewPeopleService(driver),
 		services.NewAuthService(driver, settings.JwtSecret, settings.SaltRounds),
 		services.NewFavoriteService(driver))
+	// end::useDriver[]
 
 	server := newHttpServer()
 	for _, route := range allRoutes {

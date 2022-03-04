@@ -1,9 +1,11 @@
 package challenges_test
 
 import (
-	"github.com/neo4j-graphacademy/neoflix/pkg/config"
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/neo4j-graphacademy/neoflix/pkg/config"
 )
 
 func TestNeo4jConnection(outer *testing.T) {
@@ -31,5 +33,7 @@ func TestNeo4jConnection(outer *testing.T) {
 			t.Fatalf("expected URI %s to start with bolt or neo4j scheme",
 				configuredUri.String())
 		}
+
+		fmt.Println("There are two tests in this suite")
 	})
 }

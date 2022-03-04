@@ -1,12 +1,18 @@
 package config
 
+// tag::import[]
 import (
 	"encoding/json"
-	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"io/ioutil"
+
+	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
-// ReadConfig reads the application settings from config.json
+// end::import[]
+
+/**
+ * ReadConfig reads the application settings from config.json
+ */
 // tag::readConfig[]
 func ReadConfig(path string) (*Config, error) {
 	file, err := ioutil.ReadFile(path)
@@ -32,9 +38,32 @@ type Config struct {
 	SaltRounds int    `json:"SALT_ROUNDS"`
 }
 
+/**
+ * Initiate the Neo4j Driver
+ *
+ * @param {Config} config   Config struct loaded from config.json
+ * @returns {neo4j.Driver}	A new Driver instance
+ */
+// tag::initDriver[]
 func NewDriver(settings *Config) (neo4j.Driver, error) {
-	return neo4j.NewDriver(
+	return nil, nil
+	driver, err := neo4j.NewDriver(
 		settings.Uri,
 		neo4j.BasicAuth(settings.Username, settings.Password, ""),
 	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify Connectivity
+	err = driver.VerifyConnectivity()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return driver, nil
 }
+
+// end::initDriver[]
