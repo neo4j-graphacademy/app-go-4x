@@ -116,7 +116,7 @@ func ReadTransactionExample() (string, error) {
 
 	session := driver.NewSession(neo4j.SessionConfig{DatabaseName: "reviews", AccessMode: neo4j.AccessModeWrite})
 
-	// tag::readTransaction[]
+	// tag::session.readTransaction[]
 	result, err := session.ReadTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 		result, err := transaction.Run(
 			"MATCH (n) RETURN count(n) AS count", map[string]interface{}{})
@@ -126,7 +126,7 @@ func ReadTransactionExample() (string, error) {
 
 		return result, result.Err()
 	})
-	// end::readTransaction[]
+	// end::session.readTransaction[]
 
 	return "", nil
 }
