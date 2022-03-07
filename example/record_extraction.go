@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"reflect"
+
+	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
+// tag::single[]
 func recordExtractSingleExample(queryResult neo4j.Result) (string, error) {
 	singleRecord, err := queryResult.Single()
 	if err != nil {
@@ -26,6 +28,9 @@ func recordExtractSingleExample(queryResult neo4j.Result) (string, error) {
 	return result, nil
 }
 
+// end::single[]
+
+// tag::collect[]
 func recordExtractCollectExample(queryResult neo4j.Result) ([]bool, error) {
 	// buffers everything in memory
 	records, err := queryResult.Collect()
@@ -52,6 +57,9 @@ func recordExtractCollectExample(queryResult neo4j.Result) ([]bool, error) {
 	return results, nil
 }
 
+// end::collect[]
+
+// tag::next[]
 func recordExtractNextRecordExample(queryResult neo4j.Result) ([]neo4j.Duration, error) {
 	// this time, we do not know the size in advance, we'll allocate and grow the slice as we go
 	var results []neo4j.Duration
@@ -79,3 +87,5 @@ func recordExtractNextRecordExample(queryResult neo4j.Result) ([]neo4j.Duration,
 	}
 	return results, nil
 }
+
+// end::next[]

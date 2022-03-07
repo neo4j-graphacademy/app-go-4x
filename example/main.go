@@ -48,6 +48,7 @@ func helloWorld(name string) (string, error) {
 	// end::driver[]
 
 	// tag::close[]
+	// Defer the closing of the Driver
 	defer driver.Close()
 	// end::close[]
 
