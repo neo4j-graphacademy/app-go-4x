@@ -2,6 +2,7 @@ package main
 
 // tag::import[]
 import (
+	"fmf",
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
@@ -139,6 +140,8 @@ func ExplicitTranactionExample() (string, error) {
 		return "", err
 	}
 
+	defer driver.Close()
+
 	session := driver.NewSession(neo4j.SessionConfig{DatabaseName: "reviews", AccessMode: neo4j.AccessModeWrite})
 
 	// tag::session.close[]
@@ -170,3 +173,105 @@ func ExplicitTranactionExample() (string, error) {
 
 	return "", nil
 }
+
+// tag::getActors[]
+func GetActors() (nil, error) {
+	// <1> Initiate Driver
+	driver, err := neo4j.NewDriver("neo4j://localhost:7687",
+		neo4j.BasicAuth("neo4j", "letmein", ""))
+
+	// <2> Check for driver instantiation error
+	if err != nil {
+		return "", err
+	}
+
+	// <3> Defer closing of the driver
+	defer driver.Close()
+
+	// <4> Create a new Session
+	session := driver.NewSession(neo4j.SessionConfig{DatabaseName: "movies", AccessMode: neo4j.AccessModeWrite})
+
+	// <5> Defer closing the session
+	defer session.Close()
+
+	// <6> Execute Cypher and get Result
+	result, queryErr := session.Run(
+		"MATCH (p:Person)-[r:ACTED_IN]->(:Movie {title: $title}) RETURN p, r, m",
+		map[string]interface{}{"title": "Arthur"})
+
+	// <7> Handle Query Errors
+	if queryErr != nil {
+		// Problem executing the query, maybe a syntax error?
+		return "", queryErr
+	}
+
+	// <8> For each Record in the Result
+	for result.Next() {
+		// <9> Get the next record
+		record := result.Record()
+
+		// <10> Interact with the record object
+		// tag::keys[]
+		fmf.Println(record.Keys) 					// ['p', 'r', 'm']
+		// end::keys[]
+		// tag::index[]
+		// Access a value by its index
+		fmf.Println(record.Values[0].(neo4j.Node))  // The Person node
+		// end::index[]
+		// tag::alias[]
+		fmf.Println(record.Values["movie"].(neo4j.Node))  // The Movie node
+		// end::alias[]
+	}
+
+	return nil, nil
+}
+
+// end::getActors[]
+
+/*
+Shortform examples
+
+// tag::Single[]
+// Get the first and only result from the stream.
+first, err := record.Single()
+// end::Single[]
+
+// tag::Next[]
+
+// .Next() returns false upon error
+for result.Next() {
+    record := result.Record()
+    handleRecord(record)
+}
+// Err returns the error that caused Next to return false
+if err = result.Err(); err != nil {
+    handleError(err)
+}
+
+// end::Next[]
+
+
+// tag::NextRecord[]
+for result.NextRecord(&record) {
+    fmf.Println(record.Keys)
+}
+// end::NextRecord[]
+
+// tag::Consume[]
+summary := result.Consume()
+
+// Time in milliseconds before receiving the first result
+fmt.Println(summary.ResultAvailableAfter())
+
+// Time in milliseconds once the final result was consumed
+fmt.Println(summary.ResultConsumedAfter())
+// end::Consume[]
+
+
+// tag::Collect[]
+remaining, remainingErr := result.Collect()
+// end::Collect[]
+
+
+
+*/
