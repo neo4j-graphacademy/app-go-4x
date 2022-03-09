@@ -195,9 +195,11 @@ func GetActors() (nil, error) {
 	defer session.Close()
 
 	// <6> Execute Cypher and get Result
+	// tag::run[]
 	result, queryErr := session.Run(
-		"MATCH (p:Person)-[r:ACTED_IN]->(:Movie {title: $title}) RETURN p, r, m",
+		"MATCH (p:Person)-[r:ACTED_IN]->(m:Movie {title: $title}) RETURN p, r, m",
 		map[string]interface{}{"title": "Arthur"})
+	// end::run[]
 
 	// <7> Handle Query Errors
 	if queryErr != nil {
@@ -219,6 +221,7 @@ func GetActors() (nil, error) {
 		fmf.Println(record.Values[0].(neo4j.Node))  // The Person node
 		// end::index[]
 		// tag::alias[]
+		// Access a value by its alias
 		fmf.Println(record.Values["movie"].(neo4j.Node))  // The Movie node
 		// end::alias[]
 	}
