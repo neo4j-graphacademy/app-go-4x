@@ -95,3 +95,14 @@ func getIntOrDefault(query url.Values, key string, defaultValue int) int {
 	}
 	return result
 }
+
+func NewPaging(query string, sort string, order string, skip int, limit int) *Paging {
+	return &Paging{
+		query: query,
+		sort:  sort,
+		order: order,
+		skip:  skip,
+		limit: limit,
+	}
+
+}

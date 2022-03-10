@@ -1,10 +1,13 @@
 package services
 
 import (
+	"fmt"
+	"math/rand"
+
 	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
+	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
-	"math/rand"
 )
 
 type Movie = map[string]interface{}
@@ -44,67 +47,71 @@ func (gs *neo4jMovieService) FindAll(userId string, page *paging.Paging) (_ []Mo
 	// TODO: Get a list of Movies from the Result
 	// TODO: Close the session
 
-	popularMovies, err := fixtures.ReadArray("fixtures/popular.json")
+	// popularMovies, err := fixtures.ReadArray("fixtures/popular.json")
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// return popularMovies, err
+	// tag::session[]
+	// Open a new Session
+	session := gs.driver.NewSession(neo4j.SessionConfig{})
+
+	// Close the session once this function has completed
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
+	// end::session[]
+	// tag::allcypher[]
+	// Execute a query in a new Read Transaction
+	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		// Get an array of IDs for the User's favorite movies
+		favorites, err := getUserFavorites(tx, userId)
+		if err != nil {
+			return nil, err
+		}
+		// Retrieve a list of movies with the
+		// favorite flag appended to the movie's properties
+		sort := page.Sort()
+		result, err := tx.Run(fmt.Sprintf(`
+		MATCH (m:Movie)
+		WHERE m.`+"`%[1]s`"+` IS NOT NULL
+		RETURN m {
+			.*,
+			favorite: m.tmdbId IN $favorites
+		} AS movie
+		ORDER BY m.`+"`%[1]s`"+` %s
+		SKIP $skip
+		LIMIT $limit
+		`, sort, page.Order()), map[string]interface{}{
+			"favorites": favorites,
+			"skip":      page.Skip(),
+			"limit":     page.Limit(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		// tag::allmovies[]
+		// Get a list of Movies from the Result
+		records, err := result.Collect()
+		if err != nil {
+			return nil, err
+		}
+		var results []map[string]interface{}
+		for _, record := range records {
+			movie, _ := record.Get("movie")
+			results = append(results, movie.(map[string]interface{}))
+		}
+		return results, nil
+		// end::allmovies[]
+	})
+	// end::allcypher[]
+
+	// tag::return[]
 	if err != nil {
 		return nil, err
 	}
-	return fixtures.Slice(popularMovies, page.Skip(), page.Limit()), err
-
-	//session := gs.driver.NewSession(neo4j.SessionConfig{})
-	//defer func() {
-	//	err = ioutils.DeferredClose(session, err)
-	//}()
-	//// tag::allcypher[]
-	//// Execute a query in a new Read Transaction
-	//
-	//results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
-	//	// Get an array of IDs for the User's favorite movies
-	//	favorites, err := getUserFavorites(tx, userId)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	// Retrieve a list of movies with the
-	//	// favorite flag appended to the movie's properties
-	//	sort := page.Sort()
-	//	result, err := tx.Run(fmt.Sprintf(`
-	//	MATCH (m:Movie)
-	//	WHERE m.`+"`%[1]s`"+` IS NOT NULL
-	//	RETURN m {
-	//		.*,
-	//		favorite: m.tmdbId IN $favorites
-	//	} AS movie
-	//	ORDER BY m.`+"`%[1]s`"+` %s
-	//	SKIP $skip
-	//	LIMIT $limit
-	//	`, sort, page.Order()), map[string]interface{}{
-	//		"favorites": favorites,
-	//		"skip":      page.Skip(),
-	//		"limit":     page.Limit(),
-	//	})
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	// tag::allmovies[]
-	//	// Get a list of Movies from the Result
-	//	records, err := result.Collect()
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	var results []map[string]interface{}
-	//	for _, record := range records {
-	//		movie, _ := record.Get("movie")
-	//		results = append(results, movie.(map[string]interface{}))
-	//	}
-	//	return results, nil
-	//	// end::allmovies[]
-	//})
-	//// end::allcypher[]
-	//
-	//if err != nil {
-	//	return nil, err
-	//}
-	//// tag::return[]
-	//return results.([]Movie), nil
+	return results.([]Movie), nil
 	// end::return[]
 }
 
@@ -131,6 +138,7 @@ func (gs *neo4jMovieService) FindAllByGenre(genre string, userId string, page *p
 		return nil, err
 	}
 	return fixtures.Slice(popularMovies, page.Skip(), page.Limit()), nil
+
 	//session := gs.driver.NewSession(neo4j.SessionConfig{})
 	//defer func() {
 	//	err = ioutils.DeferredClose(session, err)

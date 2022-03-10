@@ -1,10 +1,11 @@
 package routes
 
 import (
-	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
-	"github.com/neo4j-graphacademy/neoflix/pkg/services"
 	"net/http"
 	"strings"
+
+	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
+	"github.com/neo4j-graphacademy/neoflix/pkg/services"
 )
 
 type movieRoutes struct {
@@ -42,6 +43,7 @@ func (m *movieRoutes) Register(server *http.ServeMux) {
 		})
 }
 
+// tag::list[]
 func (m *movieRoutes) FindAllMovies(request *http.Request, writer http.ResponseWriter) {
 	page := paging.ParsePaging(request, paging.MovieSortableAttributes())
 	userId, err := extractUserId(request, m.auth)
@@ -52,6 +54,8 @@ func (m *movieRoutes) FindAllMovies(request *http.Request, writer http.ResponseW
 	movies, err := m.movies.FindAll(userId, page)
 	serializeJson(writer, movies, err)
 }
+
+// end::list[]
 
 func (m *movieRoutes) FindOneMovieById(id string, request *http.Request, writer http.ResponseWriter) {
 	userId, err := extractUserId(request, m.auth)
