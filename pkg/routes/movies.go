@@ -45,7 +45,10 @@ func (m *movieRoutes) Register(server *http.ServeMux) {
 
 // tag::list[]
 func (m *movieRoutes) FindAllMovies(request *http.Request, writer http.ResponseWriter) {
+	// <1> Extract pagination values from request
 	page := paging.ParsePaging(request, paging.MovieSortableAttributes())
+
+	// <2> Extract User ID from request
 	userId, err := extractUserId(request, m.auth)
 	if err != nil {
 		serializeError(writer, err)
