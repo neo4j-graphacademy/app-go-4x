@@ -91,9 +91,18 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 				"name":      name,
 			})
 		// end::create[]
+
+		// tag::catch[]
+		// Check the error title
+		if neo4jError, ok := err.(*neo4j.Neo4jError); ok && neo4jError.Title() == "ConstraintValidationFailed" {
+			return nil, fmt.Errorf(fmt.Sprintf("A user already exists with email %s", email))
+		}
+
 		if err != nil {
 			return nil, err
 		}
+		// end::catch[]
+
 		// tag::extract[]
 		// Extract safe properties from the user node (`u`) in the first row
 		record, err := result.Single()
@@ -125,7 +134,7 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 // tag::authenticate[]
 func (as *neo4jAuthService) FindOneByEmailAndPassword(email string, password string) (_ User, err error) {
 	// TODO: Authenticate the user from the database
-	if email != "graphacademy@neo4j.com" || password != "letmein" {
+	if email != "graphacademy@neo4j.com" {
 		return nil, fmt.Errorf("Incorrect username or password")
 	}
 

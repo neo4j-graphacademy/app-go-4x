@@ -40,6 +40,7 @@ func TestErrors(outer *testing.T) {
 	  	 ^)]
 	*/
 
+	// Cast error as a Neo4j Error
 	neo4jError := err.(*neo4j.Neo4jError)
 
 	fmt.Println(neo4jError.Code) // <1> Neo.ClientError.Statement.SyntaxError
@@ -50,4 +51,48 @@ func TestErrors(outer *testing.T) {
 	fmt.Println(neo4jError.Category())       // Statement
 	fmt.Println(neo4jError.Title())          // SyntaxError
 	// end::handle[]
+}
+
+func TestConstraintErrors(outer *testing.T) {
+	// Load Settings
+	settings, err := config.ReadConfig("../../config.json")
+	assertNilError(outer, err)
+
+	// Init Driver
+	driver, err := config.NewDriver(settings)
+	assertNilError(outer, err)
+
+	defer func() {
+		assertNilError(outer, driver.Close())
+	}()
+
+	session := driver.NewSession(neo4j.SessionConfig{})
+
+	// Create a new constraint
+	result, err := session.Run(
+		"CREATE CONSTRAINT IF NOT EXISTS ON (t:Test) ASSERT t.value IS UNIQUE",
+		map[string]interface{}{})
+
+	assertNotNil(outer, result)
+	assertNilError(outer, err)
+
+	// Fail constraint validation
+	result, resultErr := session.Run(
+		"UNWIND range(0, 2) AS row CREATE (t:Test {value: 'notunique'})",
+		map[string]interface{}{})
+
+	assertNil(outer, result)
+
+	// tag::constrainterror[]
+	// Cast as a Neo4jError
+	neo4jError := resultErr.(*neo4j.Neo4jError)
+
+	// Check the Error Code Title
+	if neo4jError.Title() == "ConstraintValidationFailed" {
+		// Handle the error
+	}
+	// tag::constrainterror[]
+
+	assertEquals(outer, neo4jError.Title(), "ConstraintValidationFailed")
+
 }
