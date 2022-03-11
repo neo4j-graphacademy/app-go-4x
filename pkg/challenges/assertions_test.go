@@ -4,12 +4,21 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
 func assertNilError(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func assertNil(t *testing.T, value interface{}) {
+	t.Helper()
+	if value != nil {
+		t.Fatal(fmt.Errorf("expected nil value"))
 	}
 }
 
@@ -36,5 +45,11 @@ func assertEquals(t *testing.T, a interface{}, b interface{}) {
 func assertNotEquals(t *testing.T, a interface{}, b interface{}) {
 	if a == b {
 		t.Fatalf("Received %v (type %v), expected NOT %v (type %v)", a, reflect.TypeOf(a), b, reflect.TypeOf(b))
+	}
+}
+
+func assertResultHasNextRecord(t *testing.T, result neo4j.Result) {
+	if !result.Next() {
+		t.Fatalf("Expected `.Next()` to return true on neo4j.Result.  No next record found.")
 	}
 }

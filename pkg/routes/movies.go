@@ -54,6 +54,8 @@ func (m *movieRoutes) FindAllMovies(request *http.Request, writer http.ResponseW
 		serializeError(writer, err)
 		return
 	}
+
+	// <3> Get the results
 	movies, err := m.movies.FindAll(userId, page)
 	serializeJson(writer, movies, err)
 }

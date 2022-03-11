@@ -2,7 +2,9 @@ package services
 
 import (
 	"fmt"
+
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/services/jwtutils"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -41,6 +43,24 @@ func NewAuthService(driver neo4j.Driver, jwtSecret string, saltRounds int) AuthS
 // with the returned user.
 // tag::register[]
 func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err error) {
+	// TODO: Handle Unique constraints in the database
+	// if email != "graphacademy@neo4j.com" {
+	// 	return nil, fmt.Errorf("An account already exists with this email address")
+	// }
+
+	// user, err := fixtures.ReadObject("fixtures/user.json")
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// subject := user["userId"].(string)
+	// token, err := jwtutils.Sign(subject, userToClaims(user), as.jwtSecret)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// return userWithToken(user, token), nil
+
 	encryptedPassword, err := encryptPassword(plainPassword, as.saltRounds)
 	if err != nil {
 		return nil, err
@@ -48,10 +68,12 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 
 	// Open a new Session
 	// tag::catch[]
+	// tag::session[]
 	session := as.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
 	}()
+	// end::session[]
 
 	// tag::create[]
 	result, err := session.WriteTransaction(func(tx neo4j.Transaction) (interface{}, error) {
@@ -86,69 +108,92 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 		return nil, err
 	}
 
+	// tag::return[]
 	user := result.(map[string]interface{})
 	subject := user["userId"].(string)
 	token, err := jwtutils.Sign(subject, userToClaims(user), as.jwtSecret)
 	if err != nil {
 		return nil, err
 	}
-	// tag::return[]
 	return userWithToken(user, token), nil
 	// end::return[]
 	// end::catch[]
 }
 
+// end::register[]
+
+// tag::authenticate[]
 func (as *neo4jAuthService) FindOneByEmailAndPassword(email string, password string) (_ User, err error) {
-	// Open a new Session
-	// tag::catch[]
-	session := as.driver.NewSession(neo4j.SessionConfig{})
-	defer func() {
-		err = ioutils.DeferredClose(session, err)
-	}()
+	// TODO: Authenticate the user from the database
+	if email != "graphacademy@neo4j.com" || password != "letmein" {
+		return nil, fmt.Errorf("Incorrect username or password")
+	}
 
-	// tag::query[]
-	// Find the User node within a Read Transaction
-	result, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
-		result, err := tx.Run(`
-			MATCH (u:User {email: $email}) RETURN u`,
-			map[string]interface{}{
-				"email": email,
-			})
-		if err != nil {
-			return nil, err
-		}
-		record, err := result.Single()
-		if err != nil {
-			// do not expose whether an account matches or not
-			return nil, fmt.Errorf("account not found or incorrect password")
-		}
-		user, _ := record.Get("u")
-		return user, nil
-	})
-	// end::query[]
-
+	user, err := fixtures.ReadObject("fixtures/user.json")
 	if err != nil {
 		return nil, err
 	}
 
-	// tag::password[]
-	// Check password
-	userNode := result.(neo4j.Node)
-	user := userNode.Props
-	if !verifyPassword(password, user["password"].(string)) {
-		return nil, fmt.Errorf("account not found or incorrect password")
-	}
-	// end::password[]
-
-	// tag::return[]
-	subject := userNode.Props["userId"].(string)
+	subject := user["userId"].(string)
 	token, err := jwtutils.Sign(subject, userToClaims(user), as.jwtSecret)
 	if err != nil {
 		return nil, err
 	}
+
 	return userWithToken(user, token), nil
-	// end::return[]
+
+	// // Open a new Session
+	// // tag::catch[]
+	// session := as.driver.NewSession(neo4j.SessionConfig{})
+	// defer func() {
+	// 	err = ioutils.DeferredClose(session, err)
+	// }()
+
+	// // tag::query[]
+	// // Find the User node within a Read Transaction
+	// result, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+	// 	result, err := tx.Run(`
+	// 		MATCH (u:User {email: $email}) RETURN u`,
+	// 		map[string]interface{}{
+	// 			"email": email,
+	// 		})
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	record, err := result.Single()
+	// 	if err != nil {
+	// 		// do not expose whether an account matches or not
+	// 		return nil, fmt.Errorf("account not found or incorrect password")
+	// 	}
+	// 	user, _ := record.Get("u")
+	// 	return user, nil
+	// })
+	// // end::query[]
+
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// // tag::password[]
+	// // Check password
+	// userNode := result.(neo4j.Node)
+	// user := userNode.Props
+	// if !verifyPassword(password, user["password"].(string)) {
+	// 	return nil, fmt.Errorf("account not found or incorrect password")
+	// }
+	// // end::password[]
+
+	// // tag::authreturn[]
+	// subject := userNode.Props["userId"].(string)
+	// token, err := jwtutils.Sign(subject, userToClaims(user), as.jwtSecret)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return userWithToken(user, token), nil
+	// // end::authreturn[]
 }
+
+// end::authenticate[]
 
 func (as *neo4jAuthService) ExtractUserId(bearer string) (string, error) {
 	if bearer == "" {

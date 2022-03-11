@@ -27,8 +27,11 @@ func ReadArray(fixture string) (_ []map[string]interface{}, err error) {
 // ReadObject reads the content of a JSON object fixture file
 // Note: error handling is a bit brutal here since fixtures will gradually be
 // replaced by data coming from a Neo4j instance directly
-func ReadObject(path string) (_ map[string]interface{}, err error) {
-	file, err := os.Open(path)
+func ReadObject(fixture string) (_ map[string]interface{}, err error) {
+	pwd, _ := os.Getwd()
+	newPath := filepath.Join(pwd, "..", "..", fixture)
+
+	file, err := os.Open(newPath)
 	if err != nil {
 		return nil, err
 	}
