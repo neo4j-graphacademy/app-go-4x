@@ -67,7 +67,6 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 	}
 
 	// Open a new Session
-	// tag::catch[]
 	// tag::session[]
 	session := as.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
@@ -126,7 +125,6 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 	}
 	return userWithToken(user, token), nil
 	// end::return[]
-	// end::catch[]
 }
 
 // end::register[]
