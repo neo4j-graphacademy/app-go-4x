@@ -241,5 +241,3 @@ func userWithToken(user User, token string) User {
 		"name":   user["name"],
 	}
 }
-
-// end::register[]
