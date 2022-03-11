@@ -2,7 +2,6 @@ package main
 
 // tag::import[]
 import (
-	"fmf",
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
@@ -214,15 +213,15 @@ func GetActors() (nil, error) {
 
 		// <10> Interact with the record object
 		// tag::keys[]
-		fmf.Println(record.Keys) 					// ['p', 'r', 'm']
+		fmf.Println(record.Keys) // ['p', 'r', 'm']
 		// end::keys[]
 		// tag::index[]
 		// Access a value by its index
-		fmf.Println(record.Values[0].(neo4j.Node))  // The Person node
+		fmf.Println(record.Values[0].(neo4j.Node)) // The Person node
 		// end::index[]
 		// tag::alias[]
 		// Access a value by its alias
-		fmf.Println(record.Values["movie"].(neo4j.Node))  // The Movie node
+		fmf.Println(record.Values["movie"].(neo4j.Node)) // The Movie node
 		// end::alias[]
 	}
 
