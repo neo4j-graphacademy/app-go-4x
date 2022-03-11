@@ -150,7 +150,6 @@ func (as *neo4jAuthService) FindOneByEmailAndPassword(email string, password str
 	return userWithToken(user, token), nil
 
 	// // Open a new Session
-	// // tag::catch[]
 	// session := as.driver.NewSession(neo4j.SessionConfig{})
 	// defer func() {
 	// 	err = ioutils.DeferredClose(session, err)
