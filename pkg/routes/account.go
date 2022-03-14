@@ -2,13 +2,14 @@ package routes
 
 import (
 	"fmt"
-	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
-	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
-	"github.com/neo4j-graphacademy/neoflix/pkg/services"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
+	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
+	"github.com/neo4j-graphacademy/neoflix/pkg/services"
 )
 
 type accountRoutes struct {
