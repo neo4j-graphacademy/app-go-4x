@@ -137,6 +137,7 @@ func (fs *neo4jFavoriteService) FindAllByUserId(userId string, page *paging.Pagi
 			return nil, err
 		}
 
+		// tag::collect[]
 		// Consume the results
 		records, err := result.Collect()
 		if err != nil {
@@ -149,6 +150,7 @@ func (fs *neo4jFavoriteService) FindAllByUserId(userId string, page *paging.Pagi
 			movies = append(movies, movie.(map[string]interface{}))
 		}
 		return movies, nil
+		// end::collect[]
 		// end::consume[]
 	})
 	// end::consume[]
