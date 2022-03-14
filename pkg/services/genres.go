@@ -1,9 +1,6 @@
 package services
 
 import (
-	"fmt"
-
-	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
@@ -41,7 +38,6 @@ func NewGenreService(driver neo4j.Driver) GenreService {
 func (gs *neo4jGenreService) FindAll() (_ []Genre, err error) {
 	// TODO: Open a new session
 	// TODO: Get a list of Genres from the database
-	// TODO: Close the session
 
 	// return fixtures.ReadArray("fixtures/genres.json")
 
@@ -106,56 +102,64 @@ func (gs *neo4jGenreService) FindOneByName(name string) (_ Genre, err error) {
 	// TODO: Open a new session
 	// TODO: Get Genre information from the database
 	// TODO: Return an error if the genre is not found
-	// TODO: Close the session
 
-	genres, err := fixtures.ReadArray("fixtures/genres.json")
+	// genres, err := fixtures.ReadArray("fixtures/genres.json")
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// for _, genre := range genres {
+	// 	if genre["name"] == name {
+	// 		return genre, nil
+	// 	}
+	// }
+	// return nil, fmt.Errorf("genre %q not found", name)
+
+	// Open a new Session
+	session := gs.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
+
+	// Get genre information from the database
+	result, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		result, err := tx.Run(`
+		MATCH (g:Genre {name: $name})<-[:IN_GENRE]-(m:Movie)
+		WHERE m.imdbRating IS NOT NULL
+		AND m.poster IS NOT NULL
+		AND g.name <> '(no genres listed)'
+		WITH g, m
+		ORDER BY m.imdbRating DESC
+
+		WITH g, head(collect(m)) AS movie
+
+		RETURN g {
+		  link: '/genres/'+ g.name,
+		  .name,
+		  movies: size((g)<-[:IN_GENRE]-()),
+		  poster: movie.poster
+		} AS genre`, map[string]interface{}{"name": name})
+
+		if err != nil {
+			return nil, err
+		}
+
+		// Attempt to get the first and only record
+		records, err := result.Single()
+		if err != nil {
+			return nil, err
+		}
+
+		// Get genre information from the first record
+		record, _ := records.Get("genre")
+		return record, nil
+	})
+
+	// Return an error if the genre is not found
 	if err != nil {
 		return nil, err
 	}
-	for _, genre := range genres {
-		if genre["name"] == name {
-			return genre, nil
-		}
-	}
-	return nil, fmt.Errorf("genre %q not found", name)
 
-	//session := gs.driver.NewSession(neo4j.SessionConfig{})
-	//defer func() {
-	//	err = ioutils.DeferredClose(session, err)
-	//}()
-	//
-	//result, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
-	//	result, err := tx.Run(`
-	//	MATCH (g:Genre {name: $name})<-[:IN_GENRE]-(m:Movie)
-	//	WHERE m.imdbRating IS NOT NULL
-	//	AND m.poster IS NOT NULL
-	//	AND g.name <> '(no genres listed)'
-	//	WITH g, m
-	//	ORDER BY m.imdbRating DESC
-	//
-	//	WITH g, head(collect(m)) AS movie
-	//
-	//	RETURN g {
-	//	  link: '/genres/'+ g.name,
-	//	  .name,
-	//	  movies: size((g)<-[:IN_GENRE]-()),
-	//	  poster: movie.poster
-	//	} AS genre`, map[string]interface{}{"name": name})
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	records, err := result.Single()
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	record, _ := records.Get("genre")
-	//	return record, nil
-	//})
-	//
-	//if err != nil {
-	//	return nil, err
-	//}
-	//return result.(Genre), nil
+	return result.(Genre), nil
 }
 
 // end::find[]
