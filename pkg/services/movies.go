@@ -65,13 +65,18 @@ func (gs *neo4jMovieService) FindAll(userId string, page *paging.Paging) (_ []Mo
 	// tag::allcypher[]
 	// Execute a query in a new Read Transaction
 	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		// tag::favorites[]
 		// Get an array of IDs for the User's favorite movies
 		favorites, err := getUserFavorites(tx, userId)
 		if err != nil {
 			return nil, err
 		}
-		// Retrieve a list of movies with the
-		// favorite flag appended to the movie's properties
+		// end::favorites[]
+
+		// tag::usefavorites[]
+		// TODO: introduce usefavoites in lesson 2/11
+		// Retrieve a list of movies
+		// with the favorite flag appended to the movie's properties
 		sort := page.Sort()
 		result, err := tx.Run(fmt.Sprintf(`
 		MATCH (m:Movie)
@@ -84,13 +89,16 @@ func (gs *neo4jMovieService) FindAll(userId string, page *paging.Paging) (_ []Mo
 		SKIP $skip
 		LIMIT $limit
 		`, sort, page.Order()), map[string]interface{}{
+			"skip":  page.Skip(),
+			"limit": page.Limit(),
+			// TODO: use favoites in lesson 2/11
 			"favorites": favorites,
-			"skip":      page.Skip(),
-			"limit":     page.Limit(),
 		})
 		if err != nil {
 			return nil, err
 		}
+		// end::usefavorites[]
+
 		// tag::allmovies[]
 		// Get a list of Movies from the Result
 		records, err := result.Collect()
@@ -506,24 +514,24 @@ func (gs *neo4jMovieService) FindAllBySimilarity(id string, userId string, page 
 // the user has added to their 'My Favorites' list.
 // tag::getUserFavorites[]
 func getUserFavorites(tx neo4j.Transaction, userId string) ([]string, error) {
-	return nil, nil
-	//	if userId == "" {
-	//		return nil, nil
-	//	}
-	//	results, err := tx.Run(`
-	//	MATCH (u:User {userId: $userId})-[:HAS_FAVORITE]->(m)
-	//	RETURN m.tmdbId AS id
-	//`, map[string]interface{}{"userId": userId})
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	var ids []string
-	//	for results.Next() {
-	//		record := results.Record()
-	//		id, _ := record.Get("id")
-	//		ids = append(ids, id.(string))
-	//	}
-	//	return ids, nil
+	// return nil, nil
+	if userId == "" {
+		return nil, nil
+	}
+	results, err := tx.Run(`
+		MATCH (u:User {userId: $userId})-[:HAS_FAVORITE]->(m)
+		RETURN m.tmdbId AS id
+	`, map[string]interface{}{"userId": userId})
+	if err != nil {
+		return nil, err
+	}
+	var ids []string
+	for results.Next() {
+		record := results.Record()
+		id, _ := record.Get("id")
+		ids = append(ids, id.(string))
+	}
+	return ids, nil
 }
 
 // end::getUserFavorites[]
