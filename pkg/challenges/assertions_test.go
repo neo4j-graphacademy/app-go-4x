@@ -19,7 +19,7 @@ func assertNilError(t *testing.T, err error) {
 func assertNil(t *testing.T, value interface{}) {
 	t.Helper()
 	if value != nil {
-		t.Fatal(fmt.Errorf("expected nil value"))
+		t.Fatal(fmt.Errorf("expected nil value, got %s", value))
 	}
 }
 

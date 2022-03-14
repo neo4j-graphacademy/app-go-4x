@@ -89,7 +89,7 @@ func TestConstraintErrors(outer *testing.T) {
 
 	// Check the Error Code Title
 	if neo4jError.Title() == "ConstraintValidationFailed" {
-		// Handle the error
+		// Handle the error here
 	}
 	// end::constrainterror[]
 
