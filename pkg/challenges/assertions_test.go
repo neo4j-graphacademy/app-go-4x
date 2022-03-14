@@ -51,24 +51,28 @@ func assertStringNotEmpty(t *testing.T, str string) {
 }
 
 func assertEquals(t *testing.T, a interface{}, b interface{}) {
+	t.Helper()
 	if a != b {
 		t.Fatalf("Received %v (type %v), expected %v (type %v)", a, reflect.TypeOf(a), b, reflect.TypeOf(b))
 	}
 }
 
 func assertNotEquals(t *testing.T, a interface{}, b interface{}) {
+	t.Helper()
 	if a == b {
 		t.Fatalf("Received %v (type %v), expected NOT %v (type %v)", a, reflect.TypeOf(a), b, reflect.TypeOf(b))
 	}
 }
 
 func assertResultHasNextRecord(t *testing.T, result neo4j.Result) {
+	t.Helper()
 	if !result.Next() {
 		t.Fatalf("Expected `.Next()` to return true on neo4j.Result.  No next record found.")
 	}
 }
 
 func assertContains(t *testing.T, str string, contains string) {
+	t.Helper()
 	if !strings.Contains(str, contains) {
 		t.Fatalf("Expected '%s' to contain '%s'", str, contains)
 	}
