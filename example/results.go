@@ -1,8 +1,16 @@
-func GetActorsForMovie(movie string): ([]string, error) {
+package main
+
+import (
+	"fmt"
+	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
+	"reflect"
+)
+
+func GetActorsForMovie(movie string) ([]string, error) {
 	driver, err := neo4j.NewDriver("neo4j+s://dbhash.databases.neo4j.io",
 		neo4j.BasicAuth("neo4j", "letmein", ""))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	// end::driver[]
 
@@ -14,7 +22,7 @@ func GetActorsForMovie(movie string): ([]string, error) {
 	// tag::verifyConnectivity[]
 	err = driver.VerifyConnectivity()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	// end::verifyConnectivity[]
 
@@ -22,7 +30,7 @@ func GetActorsForMovie(movie string): ([]string, error) {
 	session := driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
-	name, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
+	names, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 		// tag::run[]
 		result, err := transaction.Run(
 			"MATCH path = (p:Person)-[r:ACTED_IN]->(m:Movie {title: $title}) RETURN p, r, m, path",
@@ -35,15 +43,17 @@ func GetActorsForMovie(movie string): ([]string, error) {
 
 		// Prepare an array to return
 		i := 0
-		actorNames = make([]string)
+
+		var record *neo4j.Record
+		var actorNames []string
 
 		// tag::keys[]
-		fmf.PrintLn(record.Keys) // ['p', 'm', 'a', 'path']
+		fmt.Println(result.Keys()) // ['p', 'm', 'a', 'path']
 		// end::keys[]
 
 		// tag::nextrecord[]
 		for result.NextRecord(&record) {
-		// end::nextrecord[]
+			// end::nextrecord[]
 			i++
 
 			// tag::index[]
@@ -53,16 +63,18 @@ func GetActorsForMovie(movie string): ([]string, error) {
 
 			// tag::alias[]
 			// Get the value of `m`
-			movieByAlias := record.Values["m"].(neo4j.Node) // m, a :Movie node as type neo4j.Node()
+			movie, _ := record.Get("m")
+			movieByAlias := movie.(neo4j.Node) // m, a :Movie node as type neo4j.Node()
 			// end::alias[]
+			fmt.Println(movieByAlias) // ['p', 'm', 'a', 'path']
 
 			// Add the Person name property to the array
-			actorNames[i] = personByIndex.Props["name"]
-
+			actorNames[i] = personByIndex.Props["name"].(string)
 
 			// tag::cast[]
 			// Get a Relationship and check assertion
-			actedIn, ok := record.Values["r"].(neo4j.Relationship)
+			actedInRelationship, _ := record.Get("r")
+			actedIn, ok := actedInRelationship.(neo4j.Relationship)
 
 			if !ok {
 				// Value is not a relationship
@@ -70,42 +82,44 @@ func GetActorsForMovie(movie string): ([]string, error) {
 			}
 			// end::cast[]
 
-
 			// tag::node[]
-			person := record.Values["p"]
+			personNode, _ := record.Get("p")
+			person := personNode.(neo4j.Node)
 
-			fmf.PrintLn(person.Id) // <1>
-			fmf.PrintLn(person.Labels) // <2>
-			fmf.PrintLn(person.Props) // <3>
+			fmt.Println(person.Id)     // <1>
+			fmt.Println(person.Labels) // <2>
+			fmt.Println(person.Props)  // <3>
 			// end::node[]
 
 			// tag::relationship[]
-			actedIn := record.Values["p"]
+			actedInRelationship, _ = record.Get("p")
+			actedIn = actedInRelationship.(neo4j.Relationship)
 
-			fmf.PrintLn(actedIn.Id) // <1>
-			fmf.PrintLn(actedIn.Type) // <2>
-			fmf.PrintLn(actedIn.Props) // <3>
-			fmf.PrintLn(actedIn.StartId) // <4>
-			fmf.PrintLn(actedIn.EndId) // <5>
+			fmt.Println(actedIn.Id)      // <1>
+			fmt.Println(actedIn.Type)    // <2>
+			fmt.Println(actedIn.Props)   // <3>
+			fmt.Println(actedIn.StartId) // <4>
+			fmt.Println(actedIn.EndId)   // <5>
 			// end::relationship[]
 
 			// tag::path[]
-			path := record.Values["path"]
+			returnedPath, _ := record.Get("path")
+			path := returnedPath.(neo4j.Path)
 
-			nodes := path.Nodes.([]neo4j.Node)
-			relationships := path.Relationships.([]neo4j.Relationship)
+			nodes := path.Nodes
+			relationships := path.Relationships
 
-			for segment := range path {
-				fmf.PrintLn(segment) // neo4j.Relationship
+			for node := range nodes {
+				fmt.Println(node) // neo4j.Node
+			}
+			for relationship := range relationships {
+				fmt.Println(relationship) // neo4j.Relationship
 			}
 			// end::path[]
 
 			// Add the Person name property to the array
-			actorNames[i] = personByIndex.Props["name"]
-
-
-
-		// tag::nextrecord[]
+			actorNames[i] = personByIndex.Props["name"].(string)
+			// tag::nextrecord[]
 		}
 		// end::nextrecord[]
 
@@ -113,93 +127,108 @@ func GetActorsForMovie(movie string): ([]string, error) {
 
 	})
 	if err != nil {
-		return [], err
+		return nil, err
 	}
-
 	// end::get_actors[]
+	return names.([]string), nil
+
 }
 
 func TimeExamples(result neo4j.Result) {
 	record := result.Record()
 
 	// tag::time[]
-	time := record.Values["time"]
+	timeProperty, _ := record.Get("time")
+	time := timeProperty.(neo4j.Time).Time()
 
-	fmf.PrintLn(time.Year())  // 2022
-	fmf.PrintLn(time.Month()) // January
-	fmf.PrintLn(time.Day())   // 4
+	fmt.Println(time.Year())  // 2022
+	fmt.Println(time.Month()) // January
+	fmt.Println(time.Day())   // 4
 
 	// For Time, DateTime,
-	fmf.PrintLn(time.Day())   // 4
+	fmt.Println(time.Day()) // 4
 	// end::time[]
-
 
 }
 
 func DurationExample() (neo4j.Duration, error) {
 	driver, err := neo4j.NewDriver("neo4j+s://dbhash.databases.neo4j.io",
 		neo4j.BasicAuth("neo4j", "letmein", ""))
+
 	if err != nil {
-		return "", err
+		return neo4j.Duration{}, err
 	}
 
 	defer driver.Close()
 
-	session := driver.Session()
+	session := driver.NewSession(neo4j.SessionConfig{})
 
 	defer session.Close()
 
-	result := session.Run("RETURN duration('P1Y2M3DT12H34M56S.9876') AS duration")
+	result, err := session.Run("RETURN duration('P1Y2M3DT12H34M56S.9876') AS duration", map[string]interface{}{})
+	if err != nil {
+		return neo4j.Duration{}, err
+	}
 	record := result.Record()
 
 	// tag::duration[]
 	// duration('P1Y2M3DT12H34M56S')
 	// 1 year, 2 months, 3 days; 12 hours, 34 minutes, 56 seconds
-	duration := record.Values["duration"].(neo4j.Duration)
+	durationProperty, _ := record.Get("duration")
+	duration := durationProperty.(neo4j.Duration)
 
-	fmf.PrintLn(duration.Months)  // 14 (1 year, 2 months = 14 months)
-	fmf.PrintLn(duration.Days)	  // 3
-	fmf.PrintLn(duration.Seconds) // 45296
-	fmf.PrintLn(duration.Nanos)	  // 987600000
+	fmt.Println(duration.Months)  // 14 (1 year, 2 months = 14 months)
+	fmt.Println(duration.Days)    // 3
+	fmt.Println(duration.Seconds) // 45296
+	fmt.Println(duration.Nanos)   // 987600000
 	// end::duration[]
 
 	return duration, nil
 }
 
-func PointExample() {
+func PointExample() error {
 	driver, err := neo4j.NewDriver("neo4j+s://dbhash.databases.neo4j.io",
 		neo4j.BasicAuth("neo4j", "letmein", ""))
 	if err != nil {
-		return "", err
+		return err
 	}
-
 	defer driver.Close()
 
-	session := driver.Session()
-
+	session := driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
-	result := session.Run("RETURN
+	result, err := session.Run(`RETURN
 		point({longitude:20, latitude:10}) AS wgs842D,
 		point({longitude:20, latitude:10, height:30}) AS wgs843D,
 		point({x:20, y:10}) AS cartesian2D,
-		point({x:20, y:10, z:30}) AS cartesian3D")
+		point({x:20, y:10, z:30}) AS cartesian3D`, map[string]interface{}{})
+	if err != nil {
+		return err
+	}
+
 	record := result.Record()
 
 	// tag::point2d[]
-	wgs842D := result.Values["wgs842D"]
+	wgs842DResult, _ := record.Get("wgs842D")
+	wgs842D := wgs842DResult.(neo4j.Point2D)
 	// {SpatialRefId: xxxx, X: 10, y: 20}
 
-	cartesian2D := result.Values["cartesian2D"]
+	cartesian2DResult, _ := record.Get("cartesian2D")
+	cartesian2D := cartesian2DResult.(neo4j.Point2D)
 	// {SpatialRefId: xxxx, X: 10, y: 20}
 	// end::point2d[]
+	fmt.Printf("%v\n", wgs842D)
+	fmt.Printf("%v\n", cartesian2D)
 
 	// tag::point3d[]
-	wgs843D := result.Values["wgs843D"]
+	wgs843DResult, _ := record.Get("wgs843D")
+	wgs843D := wgs843DResult.(neo4j.Point3D)
 	// {SpatialRefId: xxxx, X: 10, y: 20, z: 30}
-	cartesian3D := result.Values["cartesian3D"]
+	cartesian3DResult, _ := record.Get("cartesian3D")
+	cartesian3D := cartesian3DResult.(neo4j.Point3D)
 	// {SpatialRefId: xxxx, X: 10, y: 20, z: 30}
 	// tag::point3d[]
-
-
+	fmt.Printf("%v\n", wgs843D)
+	fmt.Printf("%v\n", cartesian3D)
+	return nil
 }
