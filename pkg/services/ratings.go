@@ -1,7 +1,8 @@
 package services
 
 import (
-	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
+	"fmt"
+
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -31,50 +32,50 @@ func NewRatingService(driver neo4j.Driver) RatingService {
 // The `skip` variable should be used to skip a certain number of rows.
 // tag::forMovie[]
 func (rs *neo4jRatingService) FindAllByMovieId(movieId string, page *paging.Paging) (_ []Rating, err error) {
-	return fixtures.ReadArray("fixtures/ratings.json")
+	// return fixtures.ReadArray("fixtures/ratings.json")
 
-	//	// Open a new database session
-	//	session := rs.driver.NewSession(neo4j.SessionConfig{})
-	//	defer func() {
-	//		err = ioutils.DeferredClose(session, err)
-	//	}()
-	//
-	//	// Get ratings for a Movie
-	//	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
-	//		result, err := tx.Run(fmt.Sprintf(`
-	//			MATCH (u:User)-[r:RATED]->(m:Movie {tmdbId: $id})
-	//			RETURN r {
-	//				.rating,
-	//				.timestamp,
-	//			     user: u { .id, .name }
-	//			} AS review
-	//			ORDER BY r.`+"`%s`"+` %s
-	//			SKIP $skip
-	//			LIMIT $limit`, page.Sort(), page.Order()),
-	//			map[string]interface{}{
-	//				"id":    movieId,
-	//				"skip":  page.Skip(),
-	//				"limit": page.Limit(),
-	//			})
-	//		if err != nil {
-	//			return nil, err
-	//		}
-	//		records, err := result.Collect()
-	//		if err != nil {
-	//			return nil, err
-	//		}
-	//		var results []map[string]interface{}
-	//		for _, record := range records {
-	//			review, _ := record.Get("review")
-	//			results = append(results, review.(map[string]interface{}))
-	//		}
-	//		return results, nil
-	//	})
-	//
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	return results.([]Rating), nil
+	// Open a new database session
+	session := rs.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
+
+	// Get ratings for a Movie
+	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		result, err := tx.Run(fmt.Sprintf(`
+				MATCH (u:User)-[r:RATED]->(m:Movie {tmdbId: $id})
+				RETURN r {
+					.rating,
+					.timestamp,
+				     user: u { .id, .name }
+				} AS review
+				ORDER BY r.`+"`%s`"+` %s
+				SKIP $skip
+				LIMIT $limit`, page.Sort(), page.Order()),
+			map[string]interface{}{
+				"id":    movieId,
+				"skip":  page.Skip(),
+				"limit": page.Limit(),
+			})
+		if err != nil {
+			return nil, err
+		}
+		records, err := result.Collect()
+		if err != nil {
+			return nil, err
+		}
+		var results []map[string]interface{}
+		for _, record := range records {
+			review, _ := record.Get("review")
+			results = append(results, review.(map[string]interface{}))
+		}
+		return results, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return results.([]Rating), nil
 }
 
 // end::forMovie[]
