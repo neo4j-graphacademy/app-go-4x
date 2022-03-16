@@ -9,10 +9,10 @@ import (
 
 /*
 // tag::pseudo[]
-driver = neo4j.newDriver(
+driver = neo4j.NewDriver(
   connectionString, // <1>
-  auth=(username, password), // <2>
-  **configuration // <3>
+  neo4j.BasicAuth(username, password, ""). // <2>
+  configurers ...func(*Config) // <3>
 )
 // end::pseudo[]
 
