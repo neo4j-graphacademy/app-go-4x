@@ -2,6 +2,7 @@ package challenges_test
 
 import (
 	"fmt"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"testing"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/config"
@@ -22,7 +23,9 @@ func TestMovieLists(t *testing.T) {
 		assertNilError(t, driver.Close())
 	}()
 
-	service := services.NewMovieService(driver)
+	service := services.NewMovieService(
+		&fixtures.FixtureLoader{Prefix: "../.."},
+		driver)
 	assertNotNil(t, service)
 
 	tomHanks := "31"

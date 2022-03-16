@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
@@ -17,11 +18,12 @@ type RatingService interface {
 }
 
 type neo4jRatingService struct {
+	loader *fixtures.FixtureLoader
 	driver neo4j.Driver
 }
 
-func NewRatingService(driver neo4j.Driver) RatingService {
-	return &neo4jRatingService{driver: driver}
+func NewRatingService(loader *fixtures.FixtureLoader, driver neo4j.Driver) RatingService {
+	return &neo4jRatingService{loader: loader, driver: driver}
 }
 
 // FindAllByMovieId returns a paginated list of reviews for a Movie.
@@ -32,7 +34,7 @@ func NewRatingService(driver neo4j.Driver) RatingService {
 // The `skip` variable should be used to skip a certain number of rows.
 // tag::forMovie[]
 func (rs *neo4jRatingService) FindAllByMovieId(movieId string, page *paging.Paging) (_ []Rating, err error) {
-	// return fixtures.ReadArray("fixtures/ratings.json")
+	// return rs.loader.ReadArray("fixtures/ratings.json")
 
 	// Open a new database session
 	session := rs.driver.NewSession(neo4j.SessionConfig{})
@@ -90,7 +92,7 @@ func (rs *neo4jRatingService) Save(rating int, movieId string, userId string) (_
 	// TODO: Save the rating in the database
 	// TODO: Return movie details and a rating
 
-	// return fixtures.ReadObject("fixtures/goodfellas.json")
+	// return rs.loader.ReadObject("fixtures/goodfellas.json")
 
 	// Open a new session
 	session := rs.driver.NewSession(neo4j.SessionConfig{})

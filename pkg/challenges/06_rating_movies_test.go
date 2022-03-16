@@ -1,6 +1,7 @@
 package challenges_test
 
 import (
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"testing"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/config"
@@ -22,7 +23,9 @@ func TestRatingMovies(t *testing.T) {
 	}()
 
 	// Create Services
-	service := services.NewRatingService(driver)
+	service := services.NewRatingService(
+		&fixtures.FixtureLoader{Prefix: "../.."},
+		driver)
 
 	movieId := "769"
 	userId := "1185150b-9e81-46a2-a1d3-eb649544b9c4"

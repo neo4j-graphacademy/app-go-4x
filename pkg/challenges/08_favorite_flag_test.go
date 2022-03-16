@@ -1,6 +1,7 @@
 package challenges_test
 
 import (
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"testing"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/config"
@@ -22,9 +23,14 @@ func TestFavoritesFlag(t *testing.T) {
 		assertNilError(t, driver.Close())
 	}()
 
+	fixtureLoader := &fixtures.FixtureLoader{Prefix: "../.."}
 	// Create Services
-	favoriteService := services.NewFavoriteService(driver)
-	movieService := services.NewMovieService(driver)
+	favoriteService := services.NewFavoriteService(
+		fixtureLoader,
+		driver)
+	movieService := services.NewMovieService(
+		fixtureLoader,
+		driver)
 
 	assertNotNil(t, favoriteService)
 	assertNotNil(t, movieService)

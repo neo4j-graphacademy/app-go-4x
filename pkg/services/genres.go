@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
@@ -14,11 +15,12 @@ type GenreService interface {
 }
 
 type neo4jGenreService struct {
+	loader *fixtures.FixtureLoader
 	driver neo4j.Driver
 }
 
-func NewGenreService(driver neo4j.Driver) GenreService {
-	return &neo4jGenreService{driver: driver}
+func NewGenreService(loader *fixtures.FixtureLoader, driver neo4j.Driver) GenreService {
+	return &neo4jGenreService{loader: loader, driver: driver}
 }
 
 // FindAll should return a list of genres from the database with a
@@ -39,7 +41,7 @@ func (gs *neo4jGenreService) FindAll() (_ []Genre, err error) {
 	// TODO: Open a new session
 	// TODO: Get a list of Genres from the database
 
-	// return fixtures.ReadArray("fixtures/genres.json")
+	// return gs.loader.ReadArray("fixtures/genres.json")
 
 	session := gs.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
@@ -103,7 +105,7 @@ func (gs *neo4jGenreService) FindOneByName(name string) (_ Genre, err error) {
 	// TODO: Get Genre information from the database
 	// TODO: Return an error if the genre is not found
 
-	// genres, err := fixtures.ReadArray("fixtures/genres.json")
+	// genres, err := gs.loader.ReadArray("fixtures/genres.json")
 	// if err != nil {
 	// 	return nil, err
 	// }
