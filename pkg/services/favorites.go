@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
@@ -17,11 +18,12 @@ type FavoriteService interface {
 }
 
 type neo4jFavoriteService struct {
+	loader *fixtures.FixtureLoader
 	driver neo4j.Driver
 }
 
-func NewFavoriteService(driver neo4j.Driver) FavoriteService {
-	return &neo4jFavoriteService{driver: driver}
+func NewFavoriteService(loader *fixtures.FixtureLoader, driver neo4j.Driver) FavoriteService {
+	return &neo4jFavoriteService{loader: loader, driver: driver}
 }
 
 // Save should create a `:HAS_FAVORITE` relationship between
@@ -35,7 +37,7 @@ func (fs *neo4jFavoriteService) Save(userId, movieId string) (_ Movie, err error
 	// TODO: Close the session
 	// TODO: Return movie details and `favorite` property
 
-	// result, err := fixtures.ReadObject("fixtures/goodfellas.json")
+	// result, err := fs.loader.ReadObject("fixtures/goodfellas.json")
 	// if err != nil {
 	// 	return nil, err
 	// }
@@ -108,7 +110,7 @@ func (fs *neo4jFavoriteService) FindAllByUserId(userId string, page *paging.Pagi
 	// TODO: Retrieve a list of movies favorited by the user
 	// TODO: Close session
 
-	// return fixtures.ReadArray("fixtures/popular.json")
+	// return fs.loader.ReadArray("fixtures/popular.json")
 
 	// Open a new Session
 	session := fs.driver.NewSession(neo4j.SessionConfig{})
@@ -174,7 +176,7 @@ func (fs *neo4jFavoriteService) Delete(userId, movieId string) (_ Movie, err err
 	// TODO: Close the session
 	// TODO: Return movie details and `favorite` property
 
-	// result, err := fixtures.ReadObject("fixtures/goodfellas.json")
+	// result, err := fs.loader.ReadObject("fixtures/goodfellas.json")
 	// if err != nil {
 	// 	return nil, err
 	// }

@@ -1,6 +1,7 @@
 package challenges_test
 
 import (
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"testing"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/config"
@@ -45,7 +46,9 @@ func TestHandleUniqueConstraints(t *testing.T) {
 	session.Run("MATCH (u:User {email: $email}) DETACH DELETE u", map[string]interface{}{"email": email})
 
 	// Create Service
-	service := services.NewAuthService(driver, "secret", 10)
+	service := services.NewAuthService(
+		&fixtures.FixtureLoader{Prefix: "../.."},
+		driver, "secret", 10)
 
 	// Create the user
 	user, err := service.Save(email, password, name)

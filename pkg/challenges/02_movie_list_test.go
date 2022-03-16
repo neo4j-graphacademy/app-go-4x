@@ -2,6 +2,7 @@ package challenges_test
 
 import (
 	"fmt"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"testing"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/config"
@@ -22,7 +23,9 @@ func TestMovieList(outer *testing.T) {
 		assertNilError(outer, driver.Close())
 	}()
 
-	service := services.NewMovieService(driver)
+	service := services.NewMovieService(
+		&fixtures.FixtureLoader{Prefix: "../.."},
+		driver)
 
 	limit := 1
 

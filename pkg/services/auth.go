@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
@@ -21,13 +22,15 @@ type AuthService interface {
 }
 
 type neo4jAuthService struct {
+	loader     *fixtures.FixtureLoader
 	driver     neo4j.Driver
 	jwtSecret  string
 	saltRounds int
 }
 
-func NewAuthService(driver neo4j.Driver, jwtSecret string, saltRounds int) AuthService {
+func NewAuthService(loader *fixtures.FixtureLoader, driver neo4j.Driver, jwtSecret string, saltRounds int) AuthService {
 	return &neo4jAuthService{
+		loader:     loader,
 		driver:     driver,
 		jwtSecret:  jwtSecret,
 		saltRounds: saltRounds,
@@ -47,7 +50,7 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 	// 	return nil, fmt.Errorf("An account already exists with this email address")
 	// }
 
-	// user, err := fixtures.ReadObject("fixtures/user.json")
+	// user, err := as.loader.ReadObject("fixtures/user.json")
 	// if err != nil {
 	// 	return nil, err
 	// }
@@ -135,7 +138,7 @@ func (as *neo4jAuthService) FindOneByEmailAndPassword(email string, password str
 	// 	return nil, fmt.Errorf("Incorrect username or password")
 	// }
 
-	// user, err := fixtures.ReadObject("fixtures/user.json")
+	// user, err := as.loader.ReadObject("fixtures/user.json")
 	// if err != nil {
 	// 	return nil, err
 	// }

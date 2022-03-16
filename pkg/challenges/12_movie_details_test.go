@@ -2,6 +2,7 @@ package challenges_test
 
 import (
 	"fmt"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"testing"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/config"
@@ -25,7 +26,9 @@ func TestMovieDetails(t *testing.T) {
 	// get a movie by tmdbId
 	lockStock := "100"
 
-	service := services.NewMovieService(driver)
+	service := services.NewMovieService(
+		&fixtures.FixtureLoader{Prefix: "../.."},
+		driver)
 	assertNotNil(t, service)
 
 	movieById, err := service.FindOneById(lockStock, "")

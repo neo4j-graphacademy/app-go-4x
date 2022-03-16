@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
@@ -19,11 +20,12 @@ type PeopleService interface {
 }
 
 type neo4jPeopleService struct {
+	loader *fixtures.FixtureLoader
 	driver neo4j.Driver
 }
 
-func NewPeopleService(driver neo4j.Driver) PeopleService {
-	return &neo4jPeopleService{driver: driver}
+func NewPeopleService(loader *fixtures.FixtureLoader, driver neo4j.Driver) PeopleService {
+	return &neo4jPeopleService{loader: loader, driver: driver}
 }
 
 // FindAll should return a paginated list of People (actors or directors),
@@ -33,16 +35,16 @@ func NewPeopleService(driver neo4j.Driver) PeopleService {
 // number passed as `limit`.  The `skip` variable should be used to skip a
 // certain number of rows.
 // tag::all[]
-func (n *neo4jPeopleService) FindAll(page *paging.Paging) (_ []Person, err error) {
+func (ps *neo4jPeopleService) FindAll(page *paging.Paging) (_ []Person, err error) {
 	// TODO: Get a list of people from the database
 
-	// people, err := fixtures.ReadArray("fixtures/people.json")
+	// people, err := ps.loader.ReadArray("fixtures/people.json")
 	// if err != nil {
 	// 	return nil, err
 	// }
 	// return fixtures.Slice(people, page.Skip(), page.Limit()), nil
 
-	session := n.driver.NewSession(neo4j.SessionConfig{})
+	session := ps.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
 	}()
@@ -86,13 +88,13 @@ func (n *neo4jPeopleService) FindAll(page *paging.Paging) (_ []Person, err error
 // FindOneById finds a user by their ID.
 // If no user is found, an error should be thrown.
 // tag::findById[]
-func (n *neo4jPeopleService) FindOneById(id string) (_ Person, err error) {
+func (ps *neo4jPeopleService) FindOneById(id string) (_ Person, err error) {
 	// TODO: Find a user by their ID
 
-	// return fixtures.ReadObject("fixtures/pacino.json")
+	// return ps.loader.ReadObject("fixtures/pacino.json")
 
 	// Open a new database session
-	session := n.driver.NewSession(neo4j.SessionConfig{})
+	session := ps.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
 	}()
@@ -129,16 +131,16 @@ func (n *neo4jPeopleService) FindOneById(id string) (_ Person, err error) {
 // FindAllBySimilarity gets a list of similar people to a Person, ordered by their similarity score
 // in descending order.
 // tag::getSimilarPeople[]
-func (n *neo4jPeopleService) FindAllBySimilarity(id string, page *paging.Paging) (_ []Person, err error) {
+func (ps *neo4jPeopleService) FindAllBySimilarity(id string, page *paging.Paging) (_ []Person, err error) {
 	// TODO: Get a list of similar people to the person by their id
-	// people, err := fixtures.ReadArray("fixtures/people.json")
+	// people, err := ps.loader.ReadArray("fixtures/people.json")
 	// if err != nil {
 	// 	return nil, err
 	// }
 	// return fixtures.Slice(people, page.Skip(), page.Limit()), nil
 
 	// Open a new database session
-	session := n.driver.NewSession(neo4j.SessionConfig{})
+	session := ps.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
 	}()

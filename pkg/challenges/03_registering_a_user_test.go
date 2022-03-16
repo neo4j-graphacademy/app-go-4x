@@ -1,6 +1,7 @@
 package challenges_test
 
 import (
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"testing"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/config"
@@ -22,7 +23,9 @@ func TestRegisterUser(outer *testing.T) {
 	}()
 
 	// Create Service
-	service := services.NewAuthService(driver, "secret", 10)
+	service := services.NewAuthService(
+		&fixtures.FixtureLoader{Prefix: "../.."},
+		driver, "secret", 10)
 
 	email := "graphacademy@neo4j.com"
 	password := "notletmein"

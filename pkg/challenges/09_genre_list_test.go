@@ -2,6 +2,7 @@ package challenges_test
 
 import (
 	"fmt"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"sort"
 	"testing"
 
@@ -22,7 +23,9 @@ func TestGenreList(t *testing.T) {
 		assertNilError(t, driver.Close())
 	}()
 
-	service := services.NewGenreService(driver)
+	service := services.NewGenreService(
+		&fixtures.FixtureLoader{Prefix: "../.."},
+		driver)
 
 	// Should retrieve a list of genres
 	output, err := service.FindAll()

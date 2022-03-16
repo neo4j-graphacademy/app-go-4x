@@ -2,6 +2,7 @@ package challenges_test
 
 import (
 	"fmt"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"testing"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/config"
@@ -26,7 +27,9 @@ func TestListingRatings(t *testing.T) {
 	pulpFiction := "680"
 	limit := 10
 
-	service := services.NewRatingService(driver)
+	service := services.NewRatingService(
+		&fixtures.FixtureLoader{Prefix: "../.."},
+		driver)
 	assertNotNil(t, service)
 
 	first, err := service.FindAllByMovieId(pulpFiction, paging.NewPaging("", "timestamp", "ASC", 0, limit))

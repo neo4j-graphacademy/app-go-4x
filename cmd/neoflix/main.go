@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"net/http"
 
 	config "github.com/neo4j-graphacademy/neoflix/pkg/config"
@@ -23,13 +24,15 @@ func main() {
 		ioutils.PanicOnError(driver.Close())
 	}()
 
+	fixtureLoader := &fixtures.FixtureLoader{Prefix: "."}
+
 	allRoutes := allRoutes(
-		services.NewMovieService(driver),
-		services.NewGenreService(driver),
-		services.NewRatingService(driver),
-		services.NewPeopleService(driver),
-		services.NewAuthService(driver, settings.JwtSecret, settings.SaltRounds),
-		services.NewFavoriteService(driver))
+		services.NewMovieService(fixtureLoader, driver),
+		services.NewGenreService(fixtureLoader, driver),
+		services.NewRatingService(fixtureLoader, driver),
+		services.NewPeopleService(fixtureLoader, driver),
+		services.NewAuthService(fixtureLoader, driver, settings.JwtSecret, settings.SaltRounds),
+		services.NewFavoriteService(fixtureLoader, driver))
 	// end::useDriver[]
 
 	server := newHttpServer()
