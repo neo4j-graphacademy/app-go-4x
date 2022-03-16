@@ -28,8 +28,6 @@ For a complete walkthrough of this repository,  link:https://graphacademy.neo4j.
 go run ./cmd/netflix
 ----
 
-.Connection details to your neo4j database are in `src/main/resources/application.properties`
-
 == A Note on comments
 
 You may spot a number of comments in this repository that look a little like this:
