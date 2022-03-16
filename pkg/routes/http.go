@@ -5,6 +5,10 @@ import (
 	"net/http"
 )
 
+type withStatusCode interface {
+	StatusCode() int
+}
+
 func serializeJson(writer http.ResponseWriter, result interface{}, err error) {
 	if err != nil {
 		serializeError(writer, err)
@@ -22,6 +26,14 @@ func serializeJson(writer http.ResponseWriter, result interface{}, err error) {
 
 func serializeError(writer http.ResponseWriter, err error) {
 	writer.Header().Add("Content-Type", "text/plain")
-	writer.WriteHeader(500)
+	writeStatusCode(writer, err)
 	_, _ = writer.Write([]byte(err.Error()))
+}
+
+func writeStatusCode(writer http.ResponseWriter, err error) {
+	if errWithCode, ok := err.(withStatusCode); ok {
+		writer.WriteHeader(errWithCode.StatusCode())
+	} else {
+		writer.WriteHeader(500)
+	}
 }

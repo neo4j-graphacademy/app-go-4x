@@ -2,9 +2,8 @@ package services
 
 import (
 	"fmt"
-	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
-
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j-graphacademy/neoflix/pkg/services/jwtutils"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -93,23 +92,25 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 			})
 		// end::create[]
 
+		// tag::extract[]
+		// Extract safe properties from the user node (`u`) in the first row
+		record, err := result.Single()
 		// tag::catch[]
 		// Check the error title
 		if neo4jError, ok := err.(*neo4j.Neo4jError); ok && neo4jError.Title() == "ConstraintValidationFailed" {
-			return nil, fmt.Errorf("A user already exists with email %s", email)
+			return nil, NewDomainError(
+				422,
+				fmt.Sprintf("An account already exists with the email address %s", email),
+				map[string]interface{}{
+					"email": "Email address taken",
+				},
+			)
 		}
 
 		if err != nil {
 			return nil, err
 		}
 		// end::catch[]
-
-		// tag::extract[]
-		// Extract safe properties from the user node (`u`) in the first row
-		record, err := result.Single()
-		if err != nil {
-			return nil, err
-		}
 		user, _ := record.Get("u")
 		return user, nil
 		// end::extract[]
