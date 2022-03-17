@@ -85,10 +85,10 @@ func TestConstraintErrors(outer *testing.T) {
 
 	// tag::constrainterror[]
 	// Cast as a Neo4jError
-	neo4jError := resultErr.(*neo4j.Neo4jError)
+	neo4jError, ok := resultErr.(*neo4j.Neo4jError)
 
 	// Check the Error Code Title
-	if neo4jError.Title() == "ConstraintValidationFailed" {
+	if ok && neo4jError.Title() == "ConstraintValidationFailed" {
 		// Handle the error here
 	}
 	// end::constrainterror[]
