@@ -2,15 +2,16 @@ package challenges_test
 
 import (
 	"fmt"
-	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"testing"
+
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/config"
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
 	"github.com/neo4j-graphacademy/neoflix/pkg/services"
 )
 
-func TestMovieLists(t *testing.T) {
+func TestMoviePagination(t *testing.T) {
 	// Load Settings
 	settings, err := config.ReadConfig("../../config.json")
 	assertNilError(t, err)
