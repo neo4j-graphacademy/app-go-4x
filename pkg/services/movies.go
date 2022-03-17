@@ -44,6 +44,7 @@ func NewMovieService(loader *fixtures.FixtureLoader, driver neo4j.Driver) MovieS
 // signify whether the user has added the movie to their "My Favorites" list.
 // tag::all[]
 func (ms *neo4jMovieService) FindAll(userId string, page *paging.Paging) (_ []Movie, err error) {
+	// tag::session[]
 	// Open a new Session
 	session := ms.driver.NewSession(neo4j.SessionConfig{})
 
@@ -51,7 +52,9 @@ func (ms *neo4jMovieService) FindAll(userId string, page *paging.Paging) (_ []Mo
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
 	}()
+	// end::session[]
 
+	// tag::allcypher[]
 	// Execute a query in a new Read Transaction
 	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		// Retrieve a list of movies
