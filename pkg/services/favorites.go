@@ -151,17 +151,46 @@ func (fs *neo4jFavoriteService) FindAllByUserId(userId string, page *paging.Pagi
 // a `NotFoundError` should be thrown.
 // tag::remove[]
 func (fs *neo4jFavoriteService) Delete(userId, movieId string) (_ Movie, err error) {
-	// TODO: Open a new Session
-	// TODO: Delete the HAS_FAVORITE relationship within a Write Transaction
-	// TODO: Close the session
-	// TODO: Return movie details and `favorite` property
+	// Open a new session
+	session := fs.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
 
-	result, err := fs.loader.ReadObject("fixtures/goodfellas.json")
+	// Delete HAS_FAVORITE relationship within a write Transaction
+	movie, err := session.WriteTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		result, err := tx.Run(`
+				MATCH (u:User {userId: $userId})-[r:HAS_FAVORITE]->(m:Movie {tmdbId: $movieId})
+				DELETE r
+
+				RETURN m {
+					.*,
+					favorite: false
+				} AS movie
+	`, map[string]interface{}{
+			"userId":  userId,
+			"movieId": movieId,
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		record, err := result.Single()
+		if err != nil {
+			return nil, err
+		}
+		movie, _ := record.Get("movie")
+		return movie.(map[string]interface{}), nil
+	})
+
+	// Throw an error if the user or movie could not be found
 	if err != nil {
 		return nil, err
 	}
-	result["favorite"] = false
-	return result, nil
+
+	// Return movie details and `favorite` property
+	return movie.(Movie), nil
 }
 
 // end::remove[]
