@@ -1,8 +1,9 @@
 package challenges_test
 
 import (
-	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 	"testing"
+
+	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/config"
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
@@ -67,6 +68,11 @@ func TestMyFavoritesList(t *testing.T) {
 	assertEquals(t, len(all), 1)
 	assertEquals(t, all[0]["tmdbId"], toyStory)
 
+	remove, err := service.Delete(userId, toyStory)
+	assertNilError(t, err)
+	assertEquals(t, toyStory, remove["tmdbId"])
+	assertEquals(t, false, remove["favorite"])
+
 	// Add & Remove from list
 	add, err := service.Save(userId, goodfellas)
 
@@ -74,8 +80,13 @@ func TestMyFavoritesList(t *testing.T) {
 	assertEquals(t, goodfellas, add["tmdbId"])
 	assertEquals(t, true, add["favorite"])
 
-	remove, err := service.Delete(userId, goodfellas)
+	removeGoodfellas, err := service.Delete(userId, goodfellas)
 	assertNilError(t, err)
-	assertEquals(t, goodfellas, remove["tmdbId"])
-	assertEquals(t, false, remove["favorite"])
+	assertEquals(t, goodfellas, removeGoodfellas["tmdbId"])
+	assertEquals(t, false, removeGoodfellas["favorite"])
+
+	// Re-add the Toy Story Favorite for test
+	readd, err := service.Save(userId, toyStory)
+	assertNilError(t, err)
+	assertNotNil(t, readd)
 }
