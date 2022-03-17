@@ -77,6 +77,17 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 			})
 		// end::create[]
 
+		// tag::catch[]
+		// Check the error title
+		if neo4jError, ok := err.(*neo4j.Neo4jError); ok && neo4jError.Title() == "ConstraintValidationFailed" {
+			return nil, fmt.Errorf("A user already exists with email %s", email)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		// end::catch[]
+
 		// tag::extract[]
 		// Extract safe properties from the user node (`u`) in the first row
 		record, err := result.Single()
