@@ -167,7 +167,7 @@ func (fs *neo4jFavoriteService) Delete(userId, movieId string) (_ Movie, err err
 					.*,
 					favorite: false
 				} AS movie
-	`, map[string]interface{}{
+		`, map[string]interface{}{
 			"userId":  userId,
 			"movieId": movieId,
 		})
