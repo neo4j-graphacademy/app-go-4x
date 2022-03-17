@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
+	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
@@ -39,10 +40,56 @@ func NewGenreService(loader *fixtures.FixtureLoader, driver neo4j.Driver) GenreS
 //
 // tag::all[]
 func (gs *neo4jGenreService) FindAll() (_ []Genre, err error) {
-	// TODO: Open a new session
-	// TODO: Get a list of Genres from the database
+	// Open a new session
+	session := gs.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
 
-	return gs.loader.ReadArray("fixtures/genres.json")
+	// Get a list of Genres from the database
+	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		result, err := tx.Run(`
+		MATCH (g:Genre)
+		WHERE g.name <> '(no genres listed)'
+		CALL {
+			WITH g
+			MATCH (g)<-[:IN_GENRE]-(m:Movie)
+			WHERE m.imdbRating IS NOT NULL
+			AND m.poster IS NOT NULL
+			RETURN m.poster AS poster
+			ORDER BY m.imdbRating DESC LIMIT 1
+		}
+		RETURN g {
+			.name,
+			link: '/genres/'+ g.name,
+			poster: poster,
+			movies: size( (g)<-[:IN_GENRE]-() )
+		} as genre
+		ORDER BY g.name ASC`, nil)
+
+		if err != nil {
+			return nil, err
+		}
+
+		// Collect Results
+		records, err := result.Collect()
+		if err != nil {
+			return nil, err
+		}
+
+		// Get genres from results
+		var results []map[string]interface{}
+		for _, record := range records {
+			genre, _ := record.Get("genre")
+			results = append(results, genre.(map[string]interface{}))
+		}
+		return results, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return results.([]Genre), nil
 }
 
 // end::all[]
