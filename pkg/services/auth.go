@@ -121,23 +121,63 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 
 // tag::authenticate[]
 func (as *neo4jAuthService) FindOneByEmailAndPassword(email string, password string) (_ User, err error) {
-	// TODO: Authenticate the user from the database
-	if email != "graphacademy@neo4j.com" {
-		return nil, fmt.Errorf("Incorrect username or password")
-	}
+	// Open a new Session
+	session := as.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
 
-	user, err := as.loader.ReadObject("fixtures/user.json")
+	// tag::query[]
+	// Find the User node within a Read Transaction
+	result, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		result, err := tx.Run(`
+			MATCH (u:User {email: $email}) RETURN u`,
+			map[string]interface{}{
+				"email": email,
+			})
+		if err != nil {
+			return nil, err
+		}
+		// end::query[]
+
+		// tag::exists[]
+		record, err := result.Single()
+		if err != nil {
+			// do not expose whether an account matches or not
+			return nil, fmt.Errorf("account not found or incorrect password")
+		}
+		// end::exists[]
+
+		// tag::queryreturn[]
+		user, _ := record.Get("u")
+		return user, nil
+		// end::queryreturn[]
+
+		// tag::query[]
+	})
+
 	if err != nil {
 		return nil, err
 	}
+	// end::query[]
 
-	subject := user["userId"].(string)
+	// tag::password[]
+	// Check password
+	userNode := result.(neo4j.Node)
+	user := userNode.Props
+	if !verifyPassword(password, user["password"].(string)) {
+		return nil, fmt.Errorf("account not found or incorrect password")
+	}
+	// end::password[]
+
+	// tag::authreturn[]
+	subject := userNode.Props["userId"].(string)
 	token, err := jwtutils.Sign(subject, userToClaims(user), as.jwtSecret)
 	if err != nil {
 		return nil, err
 	}
-
 	return userWithToken(user, token), nil
+	// end::authreturn[]
 }
 
 // end::authenticate[]
