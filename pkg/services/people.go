@@ -84,9 +84,37 @@ func (ps *neo4jPeopleService) FindAll(page *paging.Paging) (_ []Person, err erro
 // If no user is found, an error should be thrown.
 // tag::findById[]
 func (ps *neo4jPeopleService) FindOneById(id string) (_ Person, err error) {
-	// TODO: Find a user by their ID
+	// Open a new database session
+	session := ps.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
 
-	return ps.loader.ReadObject("fixtures/pacino.json")
+	// Get a person from the database by their ID
+	result, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		result, err := tx.Run(`
+				MATCH (p:Person {tmdbId: $id})
+				RETURN p {
+					.*,
+					actedCount: size((p)-[:ACTED_IN]->()),
+					directedCount: size((p)-[:DIRECTED]->())
+				} AS person`,
+			map[string]interface{}{"id": id})
+		if err != nil {
+			return nil, err
+		}
+		record, err := result.Single()
+		if err != nil {
+			return nil, err
+		}
+		person, _ := record.Get("person")
+		return person.(map[string]interface{}), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return result.(Person), nil
 }
 
 //end::findById[]
@@ -95,12 +123,49 @@ func (ps *neo4jPeopleService) FindOneById(id string) (_ Person, err error) {
 // in descending order.
 // tag::getSimilarPeople[]
 func (ps *neo4jPeopleService) FindAllBySimilarity(id string, page *paging.Paging) (_ []Person, err error) {
-	// TODO: Get a list of similar people to the person by their id
-	people, err := ps.loader.ReadArray("fixtures/people.json")
+	// Open a new database session
+	session := ps.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
+
+	// Get a list of similar people to the person by their id
+	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		result, err := tx.Run(`
+				MATCH (:Person {tmdbId: $id})-[:ACTED_IN|DIRECTED]->(m)<-[r:ACTED_IN|DIRECTED]-(p)
+				RETURN p {
+					.*,
+					actedCount: size((p)-[:ACTED_IN]->()),
+					directedCount: size((p)-[:DIRECTED]->()),
+					inCommon: collect(m {.tmdbId, .title, type: type(r)})
+				} AS person
+				ORDER BY size(person.inCommon) DESC
+				SKIP $skip
+				LIMIT $limit`,
+			map[string]interface{}{
+				"id":    id,
+				"skip":  page.Skip(),
+				"limit": page.Limit(),
+			})
+		if err != nil {
+			return nil, err
+		}
+		records, err := result.Collect()
+		if err != nil {
+			return nil, err
+		}
+		var results []map[string]interface{}
+		for _, record := range records {
+			person, _ := record.Get("person")
+			results = append(results, person.(map[string]interface{}))
+		}
+		return results, nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-	return fixtures.Slice(people, page.Skip(), page.Limit()), nil
+	return results.([]Person), nil
 }
 
 // end::getSimilarPeople[]
