@@ -61,7 +61,7 @@ func (rs *neo4jRatingService) Save(rating int, movieId string, userId string) (_
 				SET r.rating = $rating, r.timestamp = timestamp()
 
 				RETURN m { .*, rating: r.rating } AS movie
-	`, map[string]interface{}{
+		`, map[string]interface{}{
 			"userId":  userId,
 			"movieId": movieId,
 			"rating":  rating,
