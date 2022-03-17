@@ -45,8 +45,6 @@ func NewAuthService(loader *fixtures.FixtureLoader, driver neo4j.Driver, jwtSecr
 // with the returned user.
 // tag::register[]
 func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err error) {
-	// TODO: Handle Unique constraints in the database
-
 	encryptedPassword, err := encryptPassword(plainPassword, as.saltRounds)
 	if err != nil {
 		return nil, err
@@ -78,7 +76,7 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 		// end::create[]
 
 		// tag::catch[]
-		// Check the error title
+		// Handle Unique constraint errors in the database
 		if neo4jError, ok := err.(*neo4j.Neo4jError); ok && neo4jError.Title() == "ConstraintValidationFailed" {
 			return nil, NewDomainError(
 				422,
