@@ -1,9 +1,11 @@
 package services
 
 import (
+	"fmt"
 	"math/rand"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
+	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -42,17 +44,56 @@ func NewMovieService(loader *fixtures.FixtureLoader, driver neo4j.Driver) MovieS
 // signify whether the user has added the movie to their "My Favorites" list.
 // tag::all[]
 func (ms *neo4jMovieService) FindAll(userId string, page *paging.Paging) (_ []Movie, err error) {
-	// TODO: Open an Session
-	// TODO: Execute a query in a new Read Transaction
-	// TODO: Get a list of Movies from the Result
-	// TODO: Close the session
+	// Open a new Session
+	session := ms.driver.NewSession(neo4j.SessionConfig{})
 
-	popularMovies, err := ms.loader.ReadArray("fixtures/popular.json")
+	// Close the session once this function has completed
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
+
+	// Execute a query in a new Read Transaction
+	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		// Retrieve a list of movies
+		sort := page.Sort()
+		result, err := tx.Run(fmt.Sprintf(`
+		MATCH (m:Movie)
+		WHERE m.`+"`%[1]s`"+` IS NOT NULL
+		RETURN m { .* } AS movie
+		ORDER BY m.`+"`%[1]s`"+` %s
+		SKIP $skip
+		LIMIT $limit
+		`, sort, page.Order()), map[string]interface{}{
+			"skip":  page.Skip(),
+			"limit": page.Limit(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		// end::usefavorites[]
+
+		// tag::allmovies[]
+		// Get a list of Movies from the Result
+		records, err := result.Collect()
+		if err != nil {
+			return nil, err
+		}
+		var results []map[string]interface{}
+		for _, record := range records {
+			movie, _ := record.Get("movie")
+			results = append(results, movie.(map[string]interface{}))
+		}
+		return results, nil
+		// end::allmovies[]
+	})
+	// end::allcypher[]
+
+	// tag::return[]
 	if err != nil {
 		return nil, err
 	}
-
-	return fixtures.Slice(popularMovies, page.Skip(), page.Limit()), err
+	return results.([]Movie), nil
+	// end::return[]
 }
 
 // end::all[]
