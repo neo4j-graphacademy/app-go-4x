@@ -1,7 +1,10 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/neo4j-graphacademy/neoflix/pkg/fixtures"
+	"github.com/neo4j-graphacademy/neoflix/pkg/ioutils"
 
 	"github.com/neo4j-graphacademy/neoflix/pkg/routes/paging"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -34,13 +37,45 @@ func NewPeopleService(loader *fixtures.FixtureLoader, driver neo4j.Driver) Peopl
 // certain number of rows.
 // tag::all[]
 func (ps *neo4jPeopleService) FindAll(page *paging.Paging) (_ []Person, err error) {
-	// TODO: Get a list of people from the database
+	// Open a new Session
+	session := ps.driver.NewSession(neo4j.SessionConfig{})
+	defer func() {
+		err = ioutils.DeferredClose(session, err)
+	}()
 
-	people, err := ps.loader.ReadArray("fixtures/people.json")
+	// Get a list of people in a read transaction
+	results, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
+		result, err := tx.Run(fmt.Sprintf(`
+			MATCH (p:Person)
+			WHERE $q IS NULL OR toLower(p.name) CONTAINS toLower($q)
+			RETURN p { .* } AS person
+			ORDER BY p.`+"`%s`"+` %s
+			SKIP $skip
+			LIMIT $limit`, page.Sort(), page.Order()),
+			map[string]interface{}{
+				"q":     page.Query(),
+				"skip":  page.Skip(),
+				"limit": page.Limit(),
+			})
+		if err != nil {
+			return nil, err
+		}
+		records, err := result.Collect()
+		if err != nil {
+			return nil, err
+		}
+		var results []map[string]interface{}
+		for _, record := range records {
+			person, _ := record.Get("person")
+			results = append(results, person.(map[string]interface{}))
+		}
+		return results, nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-	return fixtures.Slice(people, page.Skip(), page.Limit()), nil
+	return results.([]Person), nil
 }
 
 //end::all[]
