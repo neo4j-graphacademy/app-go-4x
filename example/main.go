@@ -2,10 +2,15 @@ package main
 
 // tag::import[]
 import (
+	"fmt"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
 // end::import[]
+
+func main() {
+	
+}
 
 /*
 // tag::pseudo[]
@@ -30,7 +35,7 @@ func basicAuth() (neo4j.AuthToken, error) {
 	password := "letmein"
 
 	auth :=
-		// tag::auth[]
+	// tag::auth[]
 		neo4j.BasicAuth(username, password, "")
 	// end::auth[]
 
@@ -52,6 +57,9 @@ func helloWorld(name string) (string, error) {
 
 	// tag::close[]
 	// Defer the closing of the Driver
+	// In production applications, make sure to properly handle the error that
+	// may happen upon Close call. Functions like `ioutils.DeferredClose` makes
+	// this error handling easier.
 	defer driver.Close()
 	// end::close[]
 
@@ -68,7 +76,7 @@ func helloWorld(name string) (string, error) {
 	// end::session[]
 
 	// tag::session.writeTransaction[]
-	name, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
+	rawName, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 		result, err := transaction.Run(
 			"CREATE (p:Person {name: $name}) RETURN p",
 			map[string]interface{}{"name": name})
@@ -85,7 +93,7 @@ func helloWorld(name string) (string, error) {
 	}
 	// end::session.writeTransaction[]
 
-	return name.(string), nil
+	return rawName.(string), nil
 }
 
 // end::createPerson[]
@@ -103,12 +111,18 @@ func SessionRunExample() (string, error) {
 	// end::sessionWithArgs[]
 
 	// tag::session.run[]
-	result, err = session.Run(
+	result, err := session.Run(
 		"MATCH (p:Person {name: $name}) RETURN p",
 		map[string]interface{}{"name": "Tom Hanks"})
 	// end::session.run[]
 
-	return "", nil
+	record, err := result.Single()
+	if err != nil {
+		return "", err
+	}
+	person, _ := record.Get("p")
+	name := person.(neo4j.Node).Props["name"]
+	return name.(string), nil
 }
 
 func ReadTransactionExample() (string, error) {
@@ -127,15 +141,19 @@ func ReadTransactionExample() (string, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		return result, result.Err()
+		record, err := result.Single()
+		if err != nil {
+			return nil, err
+		}
+		count, _ := record.Get("count")
+		return count.(int64), result.Err()
 	})
 	// end::session.readTransaction[]
 
-	return "", nil
+	return fmt.Sprintf("%d", result), nil
 }
 
-func ExplicitTranactionExample() (string, error) {
+func ExplicitTransactionExample() (string, error) {
 	driver, err := neo4j.NewDriver("neo4j://localhost:7687",
 		neo4j.BasicAuth("neo4j", "letmein", ""))
 	if err != nil {
@@ -150,6 +168,8 @@ func ExplicitTranactionExample() (string, error) {
 	defer session.Close()
 	// end::session.close[]
 
+	cypher := "RETURN 42"
+	var params map[string]interface{}
 	// tag::session.beginTransaction.Try[]
 	// tag::session.beginTransaction[]
 	// Begin Transaction
@@ -160,24 +180,33 @@ func ExplicitTranactionExample() (string, error) {
 	}
 
 	// Run a Cypher Query
-	result, err = tx.Run(cypher, params)
+	result, err := tx.Run(cypher, params)
 
-	// If something goes wrong then rollback the transaction
+	// If something goes wrong then roll back the transaction
 	if err != nil {
-		tx.Rollback()
-
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			// Go 1.13 %w feature to wrap errors
+			return "", fmt.Errorf("rollback error (%v) happened after %w", rollbackErr, err)
+		}
 		return "", err
 	}
 
 	// Otherwise, commit the transaction
-	tx.Commit()
+	if err = tx.Commit(); err != nil {
+		return "", err
+	}
 	// end::session.beginTransaction.Try[]
 
-	return "", nil
+	record, err := result.Single()
+	if err != nil {
+		return "", err
+	}
+	val, _ := record.Get("42")
+	return fmt.Sprintf("%d", val), nil
 }
 
 // tag::getActors[]
-func GetActors() (nil, error) {
+func GetActors() (string, error) {
 	// <1> Initiate Driver
 	driver, err := neo4j.NewDriver("neo4j://localhost:7687",
 		neo4j.BasicAuth("neo4j", "letmein", ""))
@@ -216,19 +245,21 @@ func GetActors() (nil, error) {
 
 		// <10> Interact with the record object
 		// tag::keys[]
-		fmf.Println(record.Keys) // ['p', 'r', 'm']
+		fmt.Println(record.Keys) // ['p', 'r', 'm']
 		// end::keys[]
 		// tag::index[]
 		// Access a value by its index
-		fmf.Println(record.Values[0].(neo4j.Node)) // The Person node
+		fmt.Println(record.Values[0].(neo4j.Node)) // The Person node
 		// end::index[]
 		// tag::alias[]
 		// Access a value by its alias
-		fmf.Println(record.Values["movie"].(neo4j.Node)) // The Movie node
+		movie, _ := record.Get("movie")
+		movieNode := movie.(neo4j.Node)
+		fmt.Println(movieNode) // The Movie node
 		// end::alias[]
 	}
 
-	return nil, nil
+	return "", nil
 }
 
 // end::getActors[]
