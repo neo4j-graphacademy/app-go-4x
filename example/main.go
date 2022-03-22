@@ -60,6 +60,7 @@ func helloWorld(name string) (string, error) {
 	// In production applications, make sure to properly handle the error that
 	// may happen upon Close call. Functions like `ioutils.DeferredClose` makes
 	// this error handling easier.
+	// This also applies to the closure of sessions.
 	defer driver.Close()
 	// end::close[]
 
