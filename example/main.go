@@ -84,7 +84,12 @@ func helloWorld(name string) (string, error) {
 			return nil, err
 		}
 
-		person := result.Record().Values[0].(neo4j.Node)
+		personRecord, err := result.Single()
+		if err != nil {
+			return nil, err
+		}
+		personNode, _ := personRecord.Get("p")
+		person := personNode.(neo4j.Node)
 
 		return person.Props["name"], result.Err()
 	})
