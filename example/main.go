@@ -211,7 +211,7 @@ func ExplicitTransactionExample() (string, error) {
 }
 
 // tag::getActors[]
-func GetActors() (string, error) {
+func getActors() (string, error) {
 	// <1> Initiate Driver
 	driver, err := neo4j.NewDriver("neo4j://localhost:7687",
 		neo4j.BasicAuth("neo4j", "letmein", ""))
