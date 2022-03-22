@@ -75,6 +75,10 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 			})
 		// end::create[]
 
+		// tag::extract[]
+		// Extract safe properties from the user node (`u`) in the first row
+		record, err := result.Single()
+
 		// tag::catch[]
 		// Handle Unique constraint errors in the database
 		if neo4jError, ok := err.(*neo4j.Neo4jError); ok && neo4jError.Title() == "ConstraintValidationFailed" {
@@ -86,18 +90,13 @@ func (as *neo4jAuthService) Save(email, plainPassword, name string) (_ User, err
 				},
 			)
 		}
-
-		if err != nil {
-			return nil, err
-		}
 		// end::catch[]
 
-		// tag::extract[]
-		// Extract safe properties from the user node (`u`) in the first row
-		record, err := result.Single()
+		// All other errors
 		if err != nil {
 			return nil, err
 		}
+
 		user, _ := record.Get("u")
 		return user, nil
 		// end::extract[]
