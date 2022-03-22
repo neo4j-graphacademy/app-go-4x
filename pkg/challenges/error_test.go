@@ -25,8 +25,7 @@ func TestErrors(outer *testing.T) {
 
 	// tag::handle[]
 	result, err := session.Run(
-		"MTCH (n) RETURN x(n)",
-		map[string]interface{}{})
+		"MTCH (n) RETURN x(n)", nil)
 	// end::handle[]
 
 	assertNil(outer, result)
