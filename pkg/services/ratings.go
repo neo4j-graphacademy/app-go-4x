@@ -87,11 +87,13 @@ func (rs *neo4jRatingService) FindAllByMovieId(movieId string, page *paging.Pagi
 // If the User or Movie cannot be found, a NotFoundError should be thrown
 // tag::add[]
 func (rs *neo4jRatingService) Save(rating int, movieId string, userId string) (_ Movie, err error) {
+	// tag::session[]
 	// Open a new session
 	session := rs.driver.NewSession(neo4j.SessionConfig{})
 	defer func() {
 		err = ioutils.DeferredClose(session, err)
 	}()
+	// end::session[]
 
 	// tag::create_rating[]
 	// Save the rating in the database
