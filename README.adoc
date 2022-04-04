@@ -25,7 +25,7 @@ For a complete walkthrough of this repository,  link:https://graphacademy.neo4j.
 * Start the project
 
 ----
-go run ./cmd/netflix
+go run ./cmd/neoflix
 ----
 
 == A Note on comments
